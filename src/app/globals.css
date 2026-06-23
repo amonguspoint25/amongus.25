@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Among Us .25 Ranked — blue theme tokens */
+:root {
+  --bg: oklch(16% 0.03 264);
+  --surface: oklch(22% 0.04 264);
+  --primary: oklch(62% 0.19 255);   /* electric/royal blue */
+  --accent: oklch(80% 0.10 220);    /* cyan-white */
+  --text: oklch(96% 0.01 264);
+  --muted: oklch(70% 0.02 264);
+}
+body { background: var(--bg); color: var(--text); }
