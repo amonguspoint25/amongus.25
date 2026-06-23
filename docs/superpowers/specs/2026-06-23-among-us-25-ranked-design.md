@@ -65,9 +65,11 @@ Auth.js (Discord provider). Single full-stack project.
   timeToKillMs, survived, eloBefore, eloAfter, eloDelta` (role-appropriate rating).
 - **Tournament** — `id, name, slug, bannerUrl, format (SINGLE_ELIM|DOUBLE_ELIM),
   status (DRAFT|ACTIVE|COMPLETE), startsAt, endsAt`.
-- **BracketMatch** — stateful tree node: `tournamentId, round, slotInRound,
-  playerAId?, playerBId?, winnerId?, matchId?, nextMatchId?, nextSlot (TOP|BOTTOM)`.
-  Reporting a result writes the winner into the referenced next node's slot.
+- **BracketMatch** — stateful tree node: `tournamentId, bracket (WINNERS|LOSERS|GRAND),
+  round, slotInRound, playerAId?, playerBId?, winnerId?, matchId?,
+  winnerNextMatchId?, winnerNextSlot (TOP|BOTTOM), loserNextMatchId?, loserNextSlot?`.
+  Reporting a result writes the winner into the winner-next node's slot; for
+  double-elimination it also drops the loser into the loser-next node's slot.
 - **IngestionToken** — `id, name, hashedToken, createdAt` (server auth).
 
 ## 5. ELO Engine (core logic)
