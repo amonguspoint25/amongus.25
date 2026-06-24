@@ -30,11 +30,16 @@ async function ensurePlayer(userId: string, displayName: string): Promise<void> 
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  // Pin cookie security to the URL scheme so the PKCE cookie's encryption salt
-  // (derived from the cookie name) is identical on the signin and callback
-  // requests. Without this, per-request secure-context detection can flip the
-  // cookie name and break PKCE decryption ("pkceCodeVerifier could not be parsed").
-  useSecureCookies: (process.env.AUTH_URL ?? "").startsWith("https://"),
+  // Pin cookie security so the PKCE cookie's encryption salt (derived from the
+  // cookie name) is identical on the signin and callback requests; without this,
+  // per-request secure-context detection can flip the cookie name and break PKCE
+  // decryption ("pkceCodeVerifier could not be parsed").
+  // Fail CLOSED in production: always require Secure cookies there, even if
+  // AUTH_URL is misconfigured. Only http dev (localhost) gets non-secure cookies.
+  useSecureCookies:
+    process.env.NODE_ENV === "production"
+      ? true
+      : (process.env.AUTH_URL ?? "").startsWith("https://"),
   providers: [Discord],
   callbacks: {
     async signIn({ user: authUser, profile }) {
