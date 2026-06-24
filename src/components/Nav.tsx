@@ -2,8 +2,9 @@ import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 
 const TABS = [
-  { href: "/leaderboard", label: "Rankings" },
-  { href: "/tournaments", label: "Tournaments" },
+  { href: "/#rankings", label: "Rankings" },
+  { href: "/#how", label: "Protocol" },
+  { href: "/#tournaments", label: "Tournaments" },
   { href: "/link", label: "Link" },
 ];
 
