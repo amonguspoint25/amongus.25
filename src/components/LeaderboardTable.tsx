@@ -3,19 +3,30 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { tierFor } from "@/lib/rank";
 
-type Row = { id: string; name: string; crewElo: number; impElo: number; overallElo: number; games: number };
+type Row = {
+  id: string; name: string;
+  crewElo: number; impElo: number; overallElo: number;
+  games: number; gamesInRole: number; needed: number;
+};
 
 const TAB_CLIP = "polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%)";
 
 export function LeaderboardTable() {
   const [sort, setSort] = useState("overall");
-  const [rows, setRows] = useState<Row[]>([]);
+  const [ranked, setRanked] = useState<Row[]>([]);
+  const [provisional, setProvisional] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     let on = true;
     const load = () =>
-      fetch(`/api/leaderboard?sort=${sort}`).then((r) => r.json()).then((d) => { if (on) setRows(d); });
+      fetch(`/api/leaderboard?sort=${sort}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (!on) return;
+          setRanked(d.ranked ?? []);
+          setProvisional(d.provisional ?? []);
+        });
     load();
     const id = setInterval(load, 15000);
     return () => { on = false; clearInterval(id); };
@@ -25,9 +36,9 @@ export function LeaderboardTable() {
     { key: "overall", label: "OVERALL" }, { key: "crew", label: "CREW" }, { key: "imp", label: "IMP" },
   ];
 
-  const filteredRows = rows.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const matches = (r: Row) => r.name.toLowerCase().includes(search.toLowerCase());
+  const filteredRanked = ranked.filter(matches);
+  const filteredProvisional = provisional.filter(matches);
 
   return (
     <div className="hud-panel hud-corners" style={{ padding: "1.5rem" }}>
@@ -88,7 +99,7 @@ export function LeaderboardTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredRows.map((r, i) => {
+          {filteredRanked.map((r, i) => {
             const tier = tierFor(r.overallElo);
             const isTopImpostor = tier.name === "Top Impostor";
             return (
@@ -127,18 +138,51 @@ export function LeaderboardTable() {
               </tr>
             );
           })}
-          {filteredRows.length === 0 && rows.length > 0 && (
+          {filteredRanked.length === 0 && ranked.length > 0 && (
             <tr>
               <td className="data p-6" colSpan={6} style={{ color: "var(--muted)" }}>No operatives match.</td>
             </tr>
           )}
-          {rows.length === 0 && (
+          {ranked.length === 0 && provisional.length === 0 && (
             <tr>
               <td className="data p-6" colSpan={6} style={{ color: "var(--muted)" }}>No players yet.</td>
             </tr>
           )}
+          {ranked.length === 0 && provisional.length > 0 && (
+            <tr>
+              <td className="data p-6" colSpan={6} style={{ color: "var(--muted)" }}>No ranked operatives yet — placements in progress.</td>
+            </tr>
+          )}
         </tbody>
       </table>
+      {filteredProvisional.length > 0 && (
+        <div style={{ marginTop: "1.5rem" }}>
+          <p className="eyebrow mb-2" style={{ color: "var(--muted)" }}>
+            // PROVISIONAL · NEED {filteredProvisional[0].needed} GAMES
+          </p>
+          <div className="grid gap-1">
+            {filteredProvisional.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between px-3 py-2"
+                style={{ border: "1px solid var(--line)", color: "var(--muted)", opacity: 0.85 }}
+              >
+                <Link
+                  href={`/players/${r.id}`}
+                  style={{ color: "var(--muted)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+                >
+                  {r.name}
+                </Link>
+                <span className="data" style={{ fontSize: "0.8rem" }}>
+                  {r.gamesInRole}/{r.needed} games
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <p className="eyebrow mt-4" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
         // LIVE · REFRESH 15s <span className="live-dot" />
       </p>
