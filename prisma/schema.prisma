@@ -49,7 +49,7 @@ enum Role {
 
 model Match {
   id           String             @id @default(cuid())
-  code         String
+  code         String             @unique
   map          String?
   startedAt    DateTime
   endedAt      DateTime
