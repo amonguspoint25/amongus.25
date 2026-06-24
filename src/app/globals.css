@@ -319,3 +319,36 @@ section[id] { scroll-margin-top: 4.5rem; }
   .live-dot, .scroll-cue::after { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* ── Page transitions (template.tsx re-mounts on every route change) ── */
+@keyframes routeEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.route-enter {
+  animation: routeEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-enter { animation: none; }
+}
+
+/* ── Boot intro blinking cursor ── */
+@keyframes bootCursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Mobile menu enter animation ── */
+@keyframes mobileMenuEnter {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-panel[style*="mobileMenuEnter"] { animation: none; }
+}
+
+/* ── Custom HUD cursor — hide native cursor when active ── */
+.cursor-none,
+.cursor-none * {
+  cursor: none !important;
+}

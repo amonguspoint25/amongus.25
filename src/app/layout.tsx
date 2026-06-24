@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { ScrollProgress } from "@/components/ScrollProgress";
+import { BootIntro } from "@/components/BootIntro";
+import { HudCursor } from "@/components/HudCursor";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -38,6 +41,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${mono.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ScrollProgress />
+        <BootIntro />
+        <HudCursor />
         <Nav />
         {children}
       </body>

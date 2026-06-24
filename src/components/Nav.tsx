@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
+import { MobileMenu } from "./MobileMenu";
 
 const TABS = [
   { href: "/#rankings", label: "Rankings" },
@@ -12,7 +13,7 @@ export function Nav() {
   return (
     <header
       className="sticky top-0 z-50"
-      style={{ background: "rgba(6,9,16,0.94)", borderBottom: "1px solid var(--line)" }}
+      style={{ background: "rgba(6,9,16,0.94)", borderBottom: "1px solid var(--line)", position: "relative" }}
     >
       <nav className="mx-auto max-w-6xl flex items-center gap-4 px-5 sm:px-8 h-14">
         <Link href="/" className="flex items-center gap-2 font-display font-bold tracking-wide">
@@ -21,6 +22,7 @@ export function Nav() {
           <span style={{ color: "var(--text)" }}>.25</span>
         </Link>
 
+        {/* Desktop tabs — hidden on mobile */}
         <div className="ml-3 hidden md:flex items-center gap-1">
           {TABS.map((t) => (
             <Link
@@ -34,9 +36,15 @@ export function Nav() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-4">
-          <span className="eyebrow hidden sm:inline" aria-hidden>SYS//ONLINE</span>
+        {/* Desktop right side — hidden on mobile */}
+        <div className="ml-auto hidden md:flex items-center gap-4">
+          <span className="eyebrow" aria-hidden>SYS//ONLINE</span>
           <SignInButton />
+        </div>
+
+        {/* Mobile right side — hamburger (passes SignInButton as a prop) */}
+        <div className="ml-auto md:hidden">
+          <MobileMenu signIn={<SignInButton />} />
         </div>
       </nav>
     </header>
