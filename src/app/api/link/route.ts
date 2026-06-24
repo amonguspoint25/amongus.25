@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bearerOk } from "@/lib/serverAuth";
-import { prisma } from "@/lib/db";
+import { redeemLinkCode } from "@/lib/linkcode";
 
 // Called by the trusted game server when a player redeems their link code in-game.
 export async function POST(req: NextRequest) {
@@ -12,8 +12,10 @@ export async function POST(req: NextRequest) {
   if (typeof linkCode !== "string") {
     return NextResponse.json({ error: "linkCode required" }, { status: 400 });
   }
-  const player = await prisma.player.findUnique({ where: { linkCode } });
-  if (!player) return NextResponse.json({ error: "invalid code" }, { status: 404 });
-  await prisma.player.update({ where: { id: player.id }, data: { isLinked: true } });
-  return NextResponse.json({ ok: true, playerId: player.id });
+  const result = await redeemLinkCode(linkCode, new Date());
+  if (!result.ok) {
+    // Single response for missing / expired / already-used — no existence oracle.
+    return NextResponse.json({ error: "invalid or expired code" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, playerId: result.playerId });
 }
