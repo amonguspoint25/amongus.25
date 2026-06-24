@@ -17,26 +17,40 @@ export function HeroParallax({ children }: { children: ReactNode }) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let raf = 0;
-    let targetX = 0, targetY = 0; // -0.5..0.5
+    let targetX = 0, targetY = 0; // pointer, -0.5..0.5
     let curX = 0, curY = 0;
+    let curSp = 0; // smoothed scroll progress through the hero, 0..1
 
     const onMove = (e: PointerEvent) => {
       targetX = e.clientX / window.innerWidth - 0.5;
       targetY = e.clientY / window.innerHeight - 0.5;
     };
     const tick = () => {
-      curX += (targetX - curX) * 0.06;
-      curY += (targetY - curY) * 0.06;
+      curX += (targetX - curX) * 0.08;
+      curY += (targetY - curY) * 0.08;
+      // scroll progress: 0 at top of hero, 1 once scrolled ~90% past it
+      const sp = Math.min(1, Math.max(0, window.scrollY / (el.offsetHeight * 0.9)));
+      curSp += (sp - curSp) * 0.18;
       el.style.setProperty("--px", curX.toFixed(4));
       el.style.setProperty("--py", curY.toFixed(4));
-      raf = requestAnimationFrame(tick);
+      el.style.setProperty("--sp", curSp.toFixed(4));
+      // Stop the loop once the hero is fully scrolled away (resume on re-entry).
+      if (curSp < 0.999 || Math.abs(targetX - curX) > 0.001) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+      }
     };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
+    const onPointer = (e: PointerEvent) => { onMove(e); kick(); };
 
-    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointermove", onPointer, { passive: true });
+    window.addEventListener("scroll", kick, { passive: true });
     raf = requestAnimationFrame(tick);
     return () => {
-      window.removeEventListener("pointermove", onMove);
-      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("scroll", kick);
+      if (raf) cancelAnimationFrame(raf);
     };
   }, []);
 

@@ -73,11 +73,10 @@ body::after {
   z-index: 999;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.022) 0 1px,
+    rgba(140, 180, 255, 0.03) 0 1px,
     transparent 1px 3px
   );
-  mix-blend-mode: overlay;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 /* Headings: squared techno display */
@@ -216,9 +215,13 @@ section[id] { scroll-margin-top: 4.5rem; }
   position: absolute;
   inset: -7%;
   background: url("/media/hero.png") center / cover no-repeat;
-  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -16px), 0) scale(1.06);
+  /* pointer parallax + scroll-driven zoom; heroBreathe animates filter only (no transform conflict) */
+  transform:
+    translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -16px), 0)
+    scale(calc(1.06 + var(--sp, 0) * 0.22));
+  opacity: calc(1 - var(--sp, 0) * 0.7);
   animation: heroBreathe 16s ease-in-out infinite;
-  will-change: transform, filter;
+  will-change: transform, opacity;
 }
 @keyframes heroBreathe {
   0%, 100% { filter: brightness(0.92) saturate(1.05); }
@@ -227,10 +230,10 @@ section[id] { scroll-margin-top: 4.5rem; }
 .hero-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(64px);
-  opacity: 0.5;
+  filter: blur(42px);
+  opacity: calc(0.45 * (1 - var(--sp, 0)));
   pointer-events: none;
-  will-change: transform;
+  will-change: transform, opacity;
 }
 .hero-orb-a {
   width: 42vw; height: 42vw; left: 6%; top: 8%;
@@ -261,7 +264,10 @@ section[id] { scroll-margin-top: 4.5rem; }
   position: relative;
   z-index: 10;
   max-width: 48rem;
-  transform: translate3d(calc(var(--px, 0) * 9px), calc(var(--py, 0) * 7px), 0);
+  /* drifts up + fades as you scroll past the hero */
+  transform: translate3d(calc(var(--px, 0) * 9px), calc(var(--py, 0) * 7px + var(--sp, 0) * -70px), 0);
+  opacity: calc(1 - var(--sp, 0) * 1.15);
+  will-change: transform, opacity;
 }
 .hero-scrollcue {
   position: absolute;
