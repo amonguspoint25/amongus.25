@@ -48,7 +48,12 @@ export function LeaderboardTable() {
                 <td className="p-3">
                   <Link href={`/players/${r.id}`} className="hover:underline" style={{ color: "var(--primary)" }}>{r.name}</Link>
                 </td>
-                <td className="p-3">{tierFor(r.overallElo).name}</td>
+                <td className="p-3">
+                  <span className="inline-flex items-center gap-2">
+                    <img src={tierFor(r.overallElo).image} alt="" width={22} height={22} />
+                    {tierFor(r.overallElo).name}
+                  </span>
+                </td>
                 <td className="p-3">{r.crewElo}</td><td className="p-3">{r.impElo}</td>
                 <td className="p-3 font-semibold">{r.overallElo}</td>
               </tr>

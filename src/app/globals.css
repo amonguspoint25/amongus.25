@@ -34,4 +34,11 @@ body {
   --text: oklch(96% 0.01 264);
   --muted: oklch(70% 0.02 264);
 }
-body { background: var(--bg); color: var(--text); }
+h1, h2, .font-display { font-family: var(--font-display), system-ui, sans-serif; }
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, oklch(28% 0.08 264 / 0.6), transparent),
+    var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+}

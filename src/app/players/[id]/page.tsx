@@ -27,9 +27,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     <main className="max-w-3xl mx-auto p-8">
       <Link href="/leaderboard" className="text-sm" style={{ color: "var(--muted)" }}>← Leaderboard</Link>
       <h1 className="text-4xl font-extrabold mt-2">{p.displayName}</h1>
-      <p className="mt-1" style={{ color: "var(--accent)" }}>
-        {tierFor(p.overallElo).name} · Overall {Math.round(p.overallElo)}
-      </p>
+      <div className="mt-2 flex items-center gap-3">
+        <img src={tierFor(p.overallElo).image} alt="" width={48} height={48} />
+        <span style={{ color: "var(--accent)" }}>{tierFor(p.overallElo).name} · Overall {Math.round(p.overallElo)}</span>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 my-8">
         <Stat label="Crew ELO" v={Math.round(p.crewElo)} />
