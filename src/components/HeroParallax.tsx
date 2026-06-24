@@ -3,10 +3,11 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 /**
- * "Living still" hero: a static image given depth via pointer parallax.
- * Background image, floating light orbs, and the content layer each move by a
- * different amount based on cursor position (smoothly eased with rAF), creating
- * a 2.5D depth effect — no video, so nothing can morph. Reduced-motion safe.
+ * "Living still" hero, composited from two layers so the ROOM animates but the
+ * CREWMATES stay frozen: `.hero-bg` (character-free room plate) gets the
+ * ambient drift + pointer parallax + scroll zoom; `.hero-chars` (transparent
+ * cutout) sits static on top and only fades on scroll. No video → no morphing.
+ * Reduced-motion safe.
  */
 export function HeroParallax({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -56,9 +57,10 @@ export function HeroParallax({ children }: { children: ReactNode }) {
 
   return (
     <div ref={ref} className="hero-stage">
-      <div className="hero-img" aria-hidden />
+      <div className="hero-bg" aria-hidden />
       <div className="hero-orb hero-orb-a" aria-hidden />
       <div className="hero-orb hero-orb-b" aria-hidden />
+      <div className="hero-chars" aria-hidden />
       <div className="hero-vignette" aria-hidden />
       <div className="hero-frame hud-corners" aria-hidden />
       <div className="hero-content">{children}</div>

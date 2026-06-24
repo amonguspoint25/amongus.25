@@ -172,17 +172,11 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .reveal-in { opacity: 1; transform: none; }
 
-/* Skip rendering offscreen sections entirely until near the viewport */
-.cv-section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 700px;
-}
-
 /* Section eyebrow + heading rhythm */
 .section-pad { padding-block: clamp(4rem, 10vw, 8rem); }
 
 /* HUD buttons (angular cut corner) */
-.btn-primary, .btn-ghost {
+.btn-primary, .btn-ghost, .btn-discord {
   display: inline-block;
   padding: 0.75rem 1.5rem;
   font-family: var(--font-display), system-ui, sans-serif;
@@ -191,6 +185,14 @@ section[id] { scroll-margin-top: 4.5rem; }
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
   cursor: pointer;
 }
+/* Join-the-Discord CTA — Discord blurple */
+.btn-discord {
+  background: #5865f2;
+  color: #fff;
+  box-shadow: 0 0 22px rgba(88, 101, 242, 0.4);
+  transition: filter 0.15s;
+}
+.btn-discord:hover { filter: brightness(1.12); }
 .btn-primary {
   background: var(--ion);
   color: #04060b;
@@ -216,21 +218,42 @@ section[id] { scroll-margin-top: 4.5rem; }
   text-align: center;
   padding: 1.5rem;
 }
-.hero-img {
+/* Background room plate — animates: ambient drift (::before) + pointer parallax + scroll zoom (outer). */
+.hero-bg {
   position: absolute;
   inset: -7%;
-  background: url("/media/hero.png") center / cover no-repeat;
-  /* pointer parallax + scroll-driven zoom; heroBreathe animates filter only (no transform conflict) */
   transform:
-    translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -16px), 0)
-    scale(calc(1.06 + var(--sp, 0) * 0.22));
+    translate3d(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -12px), 0)
+    scale(calc(1.04 + var(--sp, 0) * 0.2));
   opacity: calc(1 - var(--sp, 0) * 0.7);
-  animation: heroBreathe 16s ease-in-out infinite;
   will-change: transform, opacity;
 }
+.hero-bg::before {
+  content: "";
+  position: absolute;
+  inset: -5%;
+  background: url("/media/hero-bg.jpg") center / cover no-repeat;
+  animation: heroDrift 24s ease-in-out infinite, heroBreathe 16s ease-in-out infinite;
+  will-change: transform, filter;
+}
+@keyframes heroDrift {
+  0%   { transform: translate3d(-1.4%, 0.7%, 0) scale(1.04); }
+  50%  { transform: translate3d(1.4%, -0.7%, 0) scale(1.07); }
+  100% { transform: translate3d(-1.4%, 0.7%, 0) scale(1.04); }
+}
 @keyframes heroBreathe {
-  0%, 100% { filter: brightness(0.92) saturate(1.05); }
-  50% { filter: brightness(1.04) saturate(1.12); }
+  0%, 100% { filter: brightness(0.9) saturate(1.05); }
+  50% { filter: brightness(1.05) saturate(1.14); }
+}
+/* Character cutout — STATIC (frozen crewmates); only fades as you scroll past. */
+.hero-chars {
+  position: absolute;
+  inset: -7%;
+  background: url("/media/hero-chars.png") center / cover no-repeat;
+  /* fixed scale ≈ the room's resting scale, so the room drifts AROUND the frozen crewmates */
+  transform: scale(1.05);
+  opacity: calc(1 - var(--sp, 0) * 0.85);
+  will-change: opacity;
 }
 .hero-orb {
   position: absolute;
@@ -286,8 +309,9 @@ section[id] { scroll-margin-top: 4.5rem; }
   gap: 0.5rem;
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-img { animation: none; transform: scale(1.04); }
-  .hero-img, .hero-orb, .hero-content { transform: none; }
+  .hero-bg, .hero-orb, .hero-content { transform: none; }
+  .hero-bg::before { animation: none; transform: none; }
+  .hero-chars { transform: scale(1.05); }
 }
 
 /* A scroll cue under the hero */

@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { TIERS, tierFor } from "@/lib/rank";
 import { Reveal } from "@/components/Reveal";
 import { HeroParallax } from "@/components/HeroParallax";
-import { ActivityTicker } from "@/components/ActivityTicker";
 import { CountUp } from "@/components/CountUp";
 import { TiltCard } from "@/components/TiltCard";
 import { Magnetic } from "@/components/Magnetic";
@@ -34,6 +33,11 @@ export default async function Home() {
           <Magnetic>
             <Link href="/leaderboard" className="btn-primary">ACCESS RANKINGS →</Link>
           </Magnetic>
+          <Magnetic>
+            <a href="https://discord.gg/au25" target="_blank" rel="noopener noreferrer" className="btn-discord">
+              <DiscordGlyph /> JOIN THE DISCORD
+            </a>
+          </Magnetic>
           <Link href="#how" className="btn-ghost">HOW IT WORKS</Link>
         </div>
         <dl className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 data text-xs sm:text-sm" style={{ color: "var(--muted)" }}>
@@ -45,10 +49,8 @@ export default async function Home() {
         </dl>
       </HeroParallax>
 
-      <ActivityTicker />
-
       {/* ─────────────────────── LIVE RANKINGS ─────────────────────── */}
-      <section id="rankings" className="section-pad px-6 cv-section">
+      <section id="rankings" className="section-pad px-6">
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// LIVE RANKINGS" title="The ladder never lies" />
@@ -83,7 +85,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── HOW RANKING WORKS ─────────────────────── */}
-      <section id="how" className="section-pad px-6 cv-section" style={{ background: "linear-gradient(var(--void), #070b14, var(--void))" }}>
+      <section id="how" className="section-pad px-6" style={{ background: "linear-gradient(var(--void), #070b14, var(--void))" }}>
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// RANKING PROTOCOL" title="Two roles. Two ratings." />
@@ -147,7 +149,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── TOURNAMENTS ─────────────────────── */}
-      <section id="tournaments" className="section-pad px-6 cv-section">
+      <section id="tournaments" className="section-pad px-6">
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// BRACKET CONTROL" title="Prove it in a bracket" />
@@ -176,7 +178,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── JOIN ─────────────────────── */}
-      <section id="join" className="section-pad px-6 cv-section">
+      <section id="join" className="section-pad px-6">
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>
             <p className="eyebrow">// SECURE UPLINK</p>
@@ -190,6 +192,11 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
               <Magnetic>
                 <Link href="/link" className="btn-primary">GET MY LINK CODE →</Link>
+              </Magnetic>
+              <Magnetic>
+                <a href="https://discord.gg/au25" target="_blank" rel="noopener noreferrer" className="btn-discord">
+                  <DiscordGlyph /> JOIN THE DISCORD
+                </a>
               </Magnetic>
               <Link href="/leaderboard" className="btn-ghost">SEE THE LADDER</Link>
             </div>
@@ -215,5 +222,13 @@ function Readout({ k, v }: { k: string; v: ReactNode }) {
       <span className="eyebrow" style={{ letterSpacing: "0.18em" }}>{k}</span>
       <span className="glow-num" style={{ color: "var(--signal)" }}>{v}</span>
     </div>
+  );
+}
+
+function DiscordGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden style={{ display: "inline-block", verticalAlign: "-3px" }}>
+      <path d="M20.317 4.369A19.79 19.79 0 0 0 15.885 3c-.21.375-.45.88-.617 1.28a18.27 18.27 0 0 0-5.535 0A12.6 12.6 0 0 0 9.11 3 19.74 19.74 0 0 0 4.677 4.37C1.99 8.36 1.26 12.25 1.62 16.08a19.94 19.94 0 0 0 6.073 3.06c.49-.67.927-1.38 1.304-2.13-.717-.27-1.4-.602-2.045-.99.171-.125.34-.255.5-.39a14.23 14.23 0 0 0 12.094 0c.164.14.332.27.5.39-.646.39-1.33.722-2.047.99.377.75.814 1.46 1.304 2.13a19.9 19.9 0 0 0 6.073-3.06c.42-4.44-.72-8.3-3.06-11.71ZM8.02 13.74c-1.183 0-2.157-1.085-2.157-2.42 0-1.333.955-2.42 2.157-2.42 1.21 0 2.176 1.096 2.157 2.42 0 1.335-.955 2.42-2.157 2.42Zm7.96 0c-1.183 0-2.157-1.085-2.157-2.42 0-1.333.955-2.42 2.157-2.42 1.21 0 2.176 1.096 2.157 2.42 0 1.335-.946 2.42-2.157 2.42Z" />
+    </svg>
   );
 }
