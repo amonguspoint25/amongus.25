@@ -7,16 +7,28 @@ type BM = { id: string; round: number; playerAId?: string | null; playerBId?: st
 export function AdminReportControls({ tournamentId, matches, names }: { tournamentId: string; matches: BM[]; names: Record<string, string> }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const pending = matches.filter((m) => !m.winnerId && m.playerAId && m.playerBId);
 
   async function report(bracketMatchId: string, winnerId: string) {
     setBusy(bracketMatchId);
-    await fetch(`/api/tournaments/${tournamentId}/report`, {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ bracketMatchId, winnerId }),
-    });
-    setBusy(null);
-    router.refresh();
+    setErr(null);
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/report`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ bracketMatchId, winnerId }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setErr(d.error ?? `Failed to report result (${res.status})`);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setErr("Network error reporting result.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   if (pending.length === 0) {
@@ -25,6 +37,7 @@ export function AdminReportControls({ tournamentId, matches, names }: { tourname
   return (
     <section className="mt-10">
       <h2 className="text-xl font-bold mb-3">Admin · report results</h2>
+      {err && <p className="mb-3 text-sm" style={{ color: "#ff6b6b" }}>{err}</p>}
       <div className="space-y-3">
         {pending.map((m) => (
           <div key={m.id} className="flex items-center gap-3 rounded-lg p-3" style={{ background: "var(--surface)" }}>
