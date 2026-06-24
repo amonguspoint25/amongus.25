@@ -36,8 +36,9 @@ export function CommandPalette() {
     loadedRef.current = true;
     fetch("/api/leaderboard?sort=overall")
       .then((r) => r.json())
-      .then((data: { id: string; name: string }[]) => {
-        setPlayers(data.map((p) => ({ label: p.name, href: `/players/${p.id}` })));
+      .then((data: { ranked: { id: string; name: string }[]; provisional: { id: string; name: string }[] }) => {
+        const all = [...(data.ranked ?? []), ...(data.provisional ?? [])];
+        setPlayers(all.map((p) => ({ label: p.name, href: `/players/${p.id}` })));
       })
       .catch(() => {});
   }, []);

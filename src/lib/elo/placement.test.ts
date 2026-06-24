@@ -22,3 +22,9 @@ describe("isProvisional", () => {
     expect(isProvisional(PLACEMENT_GAMES + 1)).toBe(false);
   });
 });
+
+it("locks the product-decided threshold and K values", () => {
+  expect(PLACEMENT_GAMES).toBe(10);
+  expect(K_PLACEMENT).toBe(64);
+  expect(K_NORMAL).toBe(32);
+});
