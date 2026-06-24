@@ -33,6 +33,8 @@ model Player {
   crewWins       Int                @default(0)
   impWins        Int                @default(0)
   games          Int                @default(0)
+  crewGames      Int                @default(0)
+  impGames       Int                @default(0)
   participants   MatchParticipant[]
   createdAt      DateTime           @default(now())
 }
