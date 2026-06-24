@@ -30,6 +30,11 @@ async function ensurePlayer(userId: string, displayName: string): Promise<void> 
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  // Pin cookie security to the URL scheme so the PKCE cookie's encryption salt
+  // (derived from the cookie name) is identical on the signin and callback
+  // requests. Without this, per-request secure-context detection can flip the
+  // cookie name and break PKCE decryption ("pkceCodeVerifier could not be parsed").
+  useSecureCookies: (process.env.AUTH_URL ?? "").startsWith("https://"),
   providers: [Discord],
   callbacks: {
     async signIn({ user: authUser, profile }) {
