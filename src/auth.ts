@@ -1,30 +1,18 @@
 import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
-import { randomInt } from "crypto";
 import { prisma } from "@/lib/db";
 
-// The link code is a capability token redeemed in-game to bind an account,
-// so it must be unguessable: use a CSPRNG (crypto.randomInt), not Math.random.
-function genCode(): string {
-  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 8 }, () => alphabet[randomInt(alphabet.length)]).join("");
-}
-
-// linkCode is @unique; on the (astronomically rare) collision, retry rather
-// than crash the sign-in. Ensures a Player exists for the user, idempotently.
+// Ensures a Player exists for the user, idempotently. Players start with no link
+// code; they generate one on demand from /link. The only collision possible here is
+// a concurrent sign-in creating the same userId — treat that as success.
 async function ensurePlayer(userId: string, displayName: string): Promise<void> {
   const existing = await prisma.player.findUnique({ where: { userId } });
   if (existing) return;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      await prisma.player.create({ data: { userId, displayName, linkCode: genCode() } });
-      return;
-    } catch (err) {
-      const code = (err as { code?: string }).code;
-      if (code === "P2002" && attempt < 4) continue; // linkCode collision: regenerate
-      if (code === "P2002") return; // userId already created by a concurrent sign-in
-      throw err;
-    }
+  try {
+    await prisma.player.create({ data: { userId, displayName } });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") return; // userId created by a concurrent sign-in
+    throw err;
   }
 }
 
