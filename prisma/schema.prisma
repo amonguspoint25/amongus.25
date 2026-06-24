@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  discordId String   @unique
+  username  String
+  avatar    String?
+  isAdmin   Boolean  @default(false)
+  player    Player?
+  createdAt DateTime @default(now())
+}
+
+model Player {
+  id             String             @id @default(cuid())
+  user           User               @relation(fields: [userId], references: [id])
+  userId         String             @unique
+  displayName    String
+  linkCode       String             @unique
+  isLinked       Boolean            @default(false)
+  crewElo        Float              @default(1000)
+  impElo         Float              @default(1000)
+  overallElo     Float              @default(1000)
+  kills          Int                @default(0)
+  correctShots   Int                @default(0)
+  incorrectShots Int                @default(0)
+  tasksDone      Int                @default(0)
+  crewWins       Int                @default(0)
+  impWins        Int                @default(0)
+  games          Int                @default(0)
+  participants   MatchParticipant[]
+  createdAt      DateTime           @default(now())
+}
+
+enum Outcome {
+  CREW_WIN
+  IMP_WIN
+}
+
+enum Role {
+  CREW
+  IMPOSTOR
+}
+
+model Match {
+  id           String             @id @default(cuid())
+  code         String
+  map          String?
+  startedAt    DateTime
+  endedAt      DateTime
+  outcome      Outcome
+  tournament   Tournament?        @relation(fields: [tournamentId], references: [id])
+  tournamentId String?
+  participants MatchParticipant[]
+  createdAt    DateTime           @default(now())
+}
+
+model MatchParticipant {
+  id             String  @id @default(cuid())
+  match          Match   @relation(fields: [matchId], references: [id])
+  matchId        String
+  player         Player  @relation(fields: [playerId], references: [id])
+  playerId       String
+  role           Role
+  won            Boolean
+  kills          Int     @default(0)
+  correctShots   Int     @default(0)
+  incorrectShots Int     @default(0)
+  tasksDone      Int     @default(0)
+  tasksTotal     Int     @default(0)
+  timeToTaskMs   Int?
+  timeToKillMs   Int?
+  survived       Boolean @default(true)
+  eloBefore      Float
+  eloAfter       Float
+  eloDelta       Float
+}
+
+enum TFormat {
+  SINGLE_ELIM
+  DOUBLE_ELIM
+}
+
+enum TStatus {
+  DRAFT
+  ACTIVE
+  COMPLETE
+}
+
+enum Bracket {
+  WINNERS
+  LOSERS
+  GRAND
+}
+
+enum Slot {
+  TOP
+  BOTTOM
+}
+
+model Tournament {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  bannerUrl String?
+  format    TFormat        @default(SINGLE_ELIM)
+  status    TStatus        @default(DRAFT)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  matches   Match[]
+  bracket   BracketMatch[]
+  createdAt DateTime       @default(now())
+}
+
+model BracketMatch {
+  id                String     @id @default(cuid())
+  tournament        Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId      String
+  bracket           Bracket    @default(WINNERS)
+  round             Int
+  slotInRound       Int
+  playerAId         String?
+  playerBId         String?
+  winnerId          String?
+  matchId           String?
+  winnerNextMatchId String?
+  winnerNextSlot    Slot?
+  loserNextMatchId  String?
+  loserNextSlot     Slot?
+}
+
+model IngestionToken {
+  id          String   @id @default(cuid())
+  name        String
+  hashedToken String   @unique
+  createdAt   DateTime @default(now())
+}
