@@ -33,6 +33,18 @@ export async function createTournament(input: { name: string; slug: string; play
         });
       }
     }
+    // Auto-advance byes: a round-1 match with only one player advances that player.
+    for (let i = 0; i < seeds.length; i++) {
+      const s = seeds[i];
+      if (s.round === 1 && s.playerAId && !s.playerBId && s.winnerNextLocalId) {
+        await tx.bracketMatch.update({ where: { id: createdIds[i] }, data: { winnerId: s.playerAId } });
+        const nextId = idByLocal.get(s.winnerNextLocalId)!;
+        await tx.bracketMatch.update({
+          where: { id: nextId },
+          data: s.winnerNextSlot === "TOP" ? { playerAId: s.playerAId } : { playerBId: s.playerAId },
+        });
+      }
+    }
     return t;
   });
 }

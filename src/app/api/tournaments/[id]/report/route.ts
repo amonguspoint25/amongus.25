@@ -19,6 +19,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (winnerId !== owned.playerAId && winnerId !== owned.playerBId) {
     return NextResponse.json({ error: "winnerId is not a participant of this match" }, { status: 400 });
   }
+  if (owned.winnerId) {
+    return NextResponse.json({ error: "match already decided" }, { status: 409 });
+  }
   const node = await reportBracketResult(bracketMatchId, winnerId);
   return NextResponse.json({ ok: true, winnerId: node.winnerId });
 }

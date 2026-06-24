@@ -39,4 +39,27 @@ describe("tournament create + report", () => {
     const seated = [updatedFinals!.playerAId, updatedFinals!.playerBId];
     expect(seated).toContain(m.playerAId);
   });
+
+  it("auto-advances byes so a 6-player tournament is immediately playable", async () => {
+    const ps = [];
+    for (const n of ["A","B","C","D","E","F"]) ps.push(await makePlayer(n));
+    const t = await createTournament({ name: "Six", slug: "six", playerIds: ps.map((p) => p.id) });
+    const bracket = await prisma.bracketMatch.findMany({ where: { tournamentId: t.id } });
+    // the two bye matches already have a winner recorded
+    const byeWinners = bracket.filter((b) => b.round === 1 && b.playerAId && !b.playerBId && b.winnerId);
+    expect(byeWinners.length).toBe(2);
+    // their winners were seated into round 2
+    const r2 = bracket.filter((b) => b.round === 2);
+    const seatedR2 = r2.flatMap((b) => [b.playerAId, b.playerBId]).filter(Boolean);
+    for (const bw of byeWinners) expect(seatedR2).toContain(bw.winnerId);
+  });
+
+  it("rejects reporting a match that already has a winner", async () => {
+    const ps = [];
+    for (const n of ["W","X","Y","Z"]) ps.push(await makePlayer(n));
+    const t = await createTournament({ name: "Dup", slug: "dup", playerIds: ps.map((p) => p.id) });
+    const r1 = (await prisma.bracketMatch.findMany({ where: { tournamentId: t.id, round: 1 } }))[0];
+    await reportBracketResult(r1.id, r1.playerAId!);
+    await expect(reportBracketResult(r1.id, r1.playerBId!)).rejects.toThrow("already reported");
+  });
 });
