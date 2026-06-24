@@ -48,9 +48,18 @@ export function HeroParallax({ children }: { children: ReactNode }) {
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("scroll", kick, { passive: true });
     raf = requestAnimationFrame(tick);
+
+    // Pause the room's ambient animation while the hero is scrolled out of view.
+    const io = new IntersectionObserver(
+      ([e]) => el.classList.toggle("hero-paused", !e.isIntersecting),
+      { threshold: 0 }
+    );
+    io.observe(el);
+
     return () => {
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("scroll", kick);
+      io.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
@@ -58,8 +67,6 @@ export function HeroParallax({ children }: { children: ReactNode }) {
   return (
     <div ref={ref} className="hero-stage">
       <div className="hero-bg" aria-hidden />
-      <div className="hero-orb hero-orb-a" aria-hidden />
-      <div className="hero-orb hero-orb-b" aria-hidden />
       <div className="hero-chars" aria-hidden />
       <div className="hero-vignette" aria-hidden />
       <div className="hero-frame hud-corners" aria-hidden />
