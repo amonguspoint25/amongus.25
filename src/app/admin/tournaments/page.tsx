@@ -10,6 +10,7 @@ export default async function Page() {
   const players = await prisma.player.findMany({ orderBy: { displayName: "asc" }, select: { id: true, displayName: true } });
   return (
     <main className="max-w-2xl mx-auto p-8">
+      <p className="eyebrow mb-1">// NEW BRACKET</p>
       <h1 className="text-3xl font-extrabold mb-6">Create tournament</h1>
       <CreateTournamentForm players={players} />
     </main>

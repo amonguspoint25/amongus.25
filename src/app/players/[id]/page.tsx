@@ -23,13 +23,19 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     );
   }
   const winRate = p.games ? Math.round(((p.crewWins + p.impWins) / p.games) * 100) : 0;
+  const tier = tierFor(p.overallElo);
+  const isTopImpostor = tier.name === "Top Impostor";
   return (
     <main className="max-w-3xl mx-auto p-8">
-      <Link href="/leaderboard" className="text-sm" style={{ color: "var(--muted)" }}>← Leaderboard</Link>
+      <Link href="/leaderboard" className="eyebrow" style={{ color: "var(--muted)" }}>← Leaderboard</Link>
+      <p className="eyebrow mt-4 mb-1">// OPERATIVE DOSSIER</p>
       <h1 className="text-4xl font-extrabold mt-2">{p.displayName}</h1>
       <div className="mt-2 flex items-center gap-3">
-        <img src={tierFor(p.overallElo).image} alt="" width={48} height={48} />
-        <span style={{ color: "var(--accent)" }}>{tierFor(p.overallElo).name} · Overall {Math.round(p.overallElo)}</span>
+        <img src={tier.image} alt="" width={48} height={48} />
+        <span>
+          <span style={{ color: isTopImpostor ? "var(--alert)" : "var(--signal)" }}>{tier.name}</span>
+          {" · "}Overall <span className="glow-num">{Math.round(p.overallElo)}</span>
+        </span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 my-8">
@@ -46,18 +52,24 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       </div>
 
       <h2 className="text-xl font-bold mb-3">Recent matches</h2>
-      <div className="rounded-xl overflow-hidden" style={{ background: "var(--surface)" }}>
+      <div className="hud-panel" style={{ overflow: "hidden" }}>
         {p.participants.length === 0 && (
-          <p className="p-4" style={{ color: "var(--muted)" }}>No matches yet.</p>
+          <p className="data p-4" style={{ color: "var(--muted)" }}>No matches yet.</p>
         )}
         {p.participants.map((mp) => {
           const up = mp.eloDelta >= 0;
+          const isImpostor = mp.role === "IMPOSTOR";
           return (
-            <div key={mp.id} className="flex items-center justify-between p-3 border-t"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-              <span>{mp.role === "IMPOSTOR" ? "🔪 Impostor" : "🛠️ Crew"}</span>
-              <span style={{ color: "var(--muted)" }}>{mp.won ? "Win" : "Loss"}</span>
-              <span style={{ color: up ? "var(--accent)" : "#ff6b6b" }}>
+            <div
+              key={mp.id}
+              className="flex items-center justify-between p-3 border-t"
+              style={{ borderColor: "var(--line)" }}
+            >
+              <span className="data" style={{ color: isImpostor ? "var(--alert)" : "var(--ok)" }}>
+                {isImpostor ? "🔪 Impostor" : "🛠️ Crew"}
+              </span>
+              <span className="data" style={{ color: "var(--muted)" }}>{mp.won ? "Win" : "Loss"}</span>
+              <span className="glow-num" style={{ color: up ? "var(--signal)" : "var(--alert)" }}>
                 {up ? "+" : ""}{Math.round(mp.eloDelta)} ELO
               </span>
             </div>
@@ -70,9 +82,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
 function Stat({ label, v }: { label: string; v: string | number }) {
   return (
-    <div className="rounded-xl p-4" style={{ background: "var(--surface)" }}>
-      <div className="text-sm" style={{ color: "var(--muted)" }}>{label}</div>
-      <div className="text-2xl font-semibold mt-1">{v}</div>
+    <div className="hud-panel" style={{ padding: "1rem" }}>
+      <div className="eyebrow mb-1">{label}</div>
+      <div className="glow-num text-2xl font-semibold mt-1">{v}</div>
     </div>
   );
 }

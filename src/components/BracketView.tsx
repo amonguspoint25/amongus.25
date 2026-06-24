@@ -7,11 +7,11 @@ export function BracketView({ matches, names }: { matches: BM[]; names: Record<s
     <div className="flex gap-6 overflow-x-auto pb-4">
       {rounds.map((r) => (
         <div key={r} className="flex flex-col gap-4 min-w-[12rem]">
-          <h3 className="text-sm uppercase tracking-wide" style={{ color: "var(--muted)" }}>
-            {r === Math.max(...rounds) ? "Final" : `Round ${r}`}
+          <h3 className="eyebrow">
+            {r === Math.max(...rounds) ? "// FINAL" : `// ROUND ${r}`}
           </h3>
           {matches.filter((m) => m.round === r).sort((a, b) => a.slotInRound - b.slotInRound).map((m) => (
-            <div key={m.id} className="rounded-lg overflow-hidden" style={{ background: "var(--surface)" }}>
+            <div key={m.id} className="hud-panel" style={{ overflow: "hidden" }}>
               <Row name={label(m.playerAId)} win={!!m.winnerId && m.winnerId === m.playerAId} />
               <Row name={label(m.playerBId)} win={!!m.winnerId && m.winnerId === m.playerBId} />
             </div>
@@ -23,9 +23,17 @@ export function BracketView({ matches, names }: { matches: BM[]; names: Record<s
 }
 
 function Row({ name, win }: { name: string; win: boolean }) {
+  const isTbd = name === "TBD";
   return (
-    <div className="px-3 py-2 border-b last:border-b-0"
-      style={{ borderColor: "rgba(255,255,255,0.06)", color: win ? "var(--primary)" : "var(--text)", fontWeight: win ? 700 : 400 }}>
+    <div
+      className="data px-3 py-2 border-b last:border-b-0"
+      style={{
+        borderColor: "var(--line)",
+        color: isTbd ? "var(--muted)" : win ? "var(--ion)" : "var(--muted)",
+        fontWeight: win ? 700 : 400,
+        textShadow: win ? "0 0 10px rgba(61,139,255,0.5)" : "none",
+      }}
+    >
       {name}
     </div>
   );

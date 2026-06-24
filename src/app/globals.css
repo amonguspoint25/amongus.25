@@ -1,44 +1,166 @@
 @import "tailwindcss";
 
+/*
+  Among Us .25 Ranked — "Ship Terminal" HUD design system.
+  The existing token names (--bg, --surface, --primary, --accent, --text, --muted)
+  are remapped to the HUD palette so every page adopts the new look, plus new HUD
+  primitives (panels, eyebrows, data type, scanlines) layered on top.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* HUD palette */
+  --void: #05070d;          /* deep space background */
+  --hull: #0b1320;          /* panel surface (ship hull) */
+  --hud: #142339;           /* raised panel / inputs */
+  --line: rgba(61, 139, 255, 0.22); /* glowing hairline */
+  --ion: #3d8bff;           /* primary glow blue */
+  --signal: #38e1ff;        /* cyan data accent */
+  --alert: #ff4d5e;         /* impostor / danger — sparingly */
+  --ok: #43e08a;            /* crew / success — sparingly */
+
+  /* Backward-compatible aliases used across components */
+  --bg: var(--void);
+  --surface: var(--hull);
+  --primary: var(--ion);
+  --accent: var(--signal);
+  --text: #dce7f5;
+  --muted: #6b7c99;
+
+  --glow: 0 0 22px rgba(61, 139, 255, 0.30);
+  --glow-cyan: 0 0 14px rgba(56, 225, 255, 0.45);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--void);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scrollbar-color: var(--ion) var(--hull); }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Among Us .25 Ranked — blue theme tokens */
-:root {
-  --bg: oklch(16% 0.03 264);
-  --surface: oklch(22% 0.04 264);
-  --primary: oklch(62% 0.19 255);   /* electric/royal blue */
-  --accent: oklch(80% 0.10 220);    /* cyan-white */
-  --text: oklch(96% 0.01 264);
-  --muted: oklch(70% 0.02 264);
-}
-h1, h2, .font-display { font-family: var(--font-display), system-ui, sans-serif; }
-body {
-  background:
-    radial-gradient(1200px 600px at 50% -10%, oklch(28% 0.08 264 / 0.6), transparent),
-    var(--bg);
-  min-height: 100vh;
   color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 520px at 82% -8%, rgba(61, 139, 255, 0.12), transparent 60%),
+    radial-gradient(760px 520px at 6% 108%, rgba(56, 225, 255, 0.07), transparent 60%),
+    linear-gradient(var(--void), #04060b);
+}
+
+/* Faint engineering grid behind everything */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(61, 139, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61, 139, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, #000 30%, transparent 80%);
+}
+
+/* CRT scanlines over the whole viewport */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.022) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+/* Headings: squared techno display */
+h1, h2, h3, .font-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Terminal data — mono numbers/labels with a faint glow */
+.data, .mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.glow-num {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(61, 139, 255, 0.55);
+}
+
+/* Eyebrow / telemetry label: "// CREW MANIFEST" */
+.eyebrow {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--signal);
+  opacity: 0.85;
+}
+
+/*
+  Signature: ship-console panel.
+  Hull background, glowing hairline border, an angular cut top-right corner,
+  and a bright accent tab on the left edge.
+*/
+.hud-panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(61, 139, 255, 0.04), transparent 40%),
+    var(--hull);
+  border: 1px solid var(--line);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+.hud-panel::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 14px; bottom: 14px;
+  width: 2px;
+  background: linear-gradient(var(--ion), var(--signal));
+  box-shadow: var(--glow);
+}
+/* Corner tick marks (top-left + bottom-right) for the HUD framing */
+.hud-corners::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--signal), var(--signal)) left top / 12px 2px no-repeat,
+    linear-gradient(var(--signal), var(--signal)) left top / 2px 12px no-repeat,
+    linear-gradient(var(--signal), var(--signal)) right bottom / 12px 2px no-repeat,
+    linear-gradient(var(--signal), var(--signal)) right bottom / 2px 12px no-repeat;
+  opacity: 0.5;
+}
+
+/* Live indicator dot */
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 10px var(--ok);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* Accessibility */
+::selection { background: rgba(61, 139, 255, 0.35); color: #fff; }
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+  * { scroll-behavior: auto; }
 }

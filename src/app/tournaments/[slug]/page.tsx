@@ -19,9 +19,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   }));
   return (
     <main className="max-w-5xl mx-auto p-8">
+      <p className="eyebrow mb-1">// BRACKET // {slug}</p>
       <h1 className="text-3xl font-extrabold mb-1">{t.name}</h1>
-      <p className="mb-6 text-sm" style={{ color: "var(--muted)" }}>{t.status} · single elimination</p>
-      <img src={t.bannerUrl ?? "/media/banner-tournament.png"} alt="" className="rounded-xl mb-6 w-full object-cover max-h-56" />
+      <p className="data mb-6 text-sm" style={{ color: "var(--muted)" }}>{t.status} · single elimination</p>
+      <img src={t.bannerUrl ?? "/media/banner-tournament.png"} alt="" className="mb-6 w-full object-cover max-h-56" style={{ borderRadius: 0 }} />
       <BracketView matches={bracket} names={names} />
       {isAdmin && <AdminReportControls tournamentId={t.id} matches={bracket} names={names} />}
     </main>
