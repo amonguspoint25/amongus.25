@@ -9,11 +9,29 @@ function genCode(): string {
   ).join("");
 }
 
+// linkCode is @unique; on the (astronomically rare) collision, retry rather
+// than crash the sign-in. Ensures a Player exists for the user, idempotently.
+async function ensurePlayer(userId: string, displayName: string): Promise<void> {
+  const existing = await prisma.player.findUnique({ where: { userId } });
+  if (existing) return;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await prisma.player.create({ data: { userId, displayName, linkCode: genCode() } });
+      return;
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === "P2002" && attempt < 4) continue; // linkCode collision: regenerate
+      if (code === "P2002") return; // userId already created by a concurrent sign-in
+      throw err;
+    }
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [Discord],
   callbacks: {
-    async signIn({ profile }) {
+    async signIn({ user: authUser, profile }) {
       if (!profile?.id) return false;
       const discordId = String(profile.id);
       const username = String(
@@ -21,22 +39,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           profile.username ??
           "player"
       );
-      const avatar =
-        (profile as { image_url?: string }).image_url ?? null;
+      // Auth.js normalizes the full Discord avatar URL onto `user.image`.
+      const avatar = authUser?.image ?? null;
       const user = await prisma.user.upsert({
         where: { discordId },
         update: { username, avatar },
         create: { discordId, username, avatar },
       });
-      await prisma.player.upsert({
-        where: { userId: user.id },
-        update: {},
-        create: {
-          userId: user.id,
-          displayName: username,
-          linkCode: genCode(),
-        },
-      });
+      await ensurePlayer(user.id, username);
       return true;
     },
     async jwt({ token, profile }) {
