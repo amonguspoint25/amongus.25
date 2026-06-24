@@ -1,12 +1,13 @@
 import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/db";
 
+// The link code is a capability token redeemed in-game to bind an account,
+// so it must be unguessable: use a CSPRNG (crypto.randomInt), not Math.random.
 function genCode(): string {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () =>
-    alphabet[Math.floor(Math.random() * alphabet.length)]
-  ).join("");
+  return Array.from({ length: 8 }, () => alphabet[randomInt(alphabet.length)]).join("");
 }
 
 // linkCode is @unique; on the (astronomically rare) collision, retry rather
