@@ -1,4 +1,5 @@
 import { randomInt } from "crypto";
+import { prisma } from "@/lib/db";
 
 // A link code is generated on demand, valid for this window, then expires.
 export const LINK_CODE_TTL_MS = 15 * 60 * 1000; // 15 minutes
@@ -24,4 +25,39 @@ export function canRegenerate(expiresAt: Date | null, now: Date): boolean {
   if (expiresAt === null) return true;
   const issuedAt = expiresAt.getTime() - LINK_CODE_TTL_MS;
   return now.getTime() - issuedAt >= LINK_CODE_COOLDOWN_MS;
+}
+
+// Mint a fresh code for the player and stamp its expiry. linkCode is @unique; on the
+// (astronomically rare) collision, regenerate and retry rather than fail the request.
+export async function issueLinkCode(playerId: string, now: Date): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = genCode();
+    try {
+      await prisma.player.update({
+        where: { id: playerId },
+        data: { linkCode: code, linkCodeExpiresAt: new Date(now.getTime() + LINK_CODE_TTL_MS) },
+      });
+      return code;
+    } catch (err) {
+      if ((err as { code?: string }).code === "P2002" && attempt < 4) continue; // linkCode collision
+      throw err;
+    }
+  }
+  throw new Error("could not issue a unique link code");
+}
+
+// Redeem a code: if it exists and is unexpired, link the player and clear the code
+// (one-time use). Returns { ok: false } for missing, expired, or already-used codes —
+// the caller maps all of these to a single response (no existence oracle).
+export async function redeemLinkCode(
+  linkCode: string,
+  now: Date,
+): Promise<{ ok: true; playerId: string } | { ok: false }> {
+  const player = await prisma.player.findUnique({ where: { linkCode } });
+  if (!player || isExpired(player.linkCodeExpiresAt, now)) return { ok: false };
+  await prisma.player.update({
+    where: { id: player.id },
+    data: { isLinked: true, linkCode: null, linkCodeExpiresAt: null },
+  });
+  return { ok: true, playerId: player.id };
 }
