@@ -3,6 +3,7 @@ import { tierFor } from "@/lib/rank";
 import Link from "next/link";
 import { CountUp } from "@/components/CountUp";
 import { Sparkline } from "@/components/Sparkline";
+import { TiltCard } from "@/components/TiltCard";
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,10 +62,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 my-8">
         <StatCountUp label="Crew ELO" v={Math.round(p.crewElo)} />
         <StatCountUp label="Impostor ELO" v={Math.round(p.impElo)} />
-        <div className="hud-panel" style={{ padding: "1rem" }}>
-          <div className="eyebrow mb-1">Win rate</div>
-          <div className="glow-num text-2xl font-semibold mt-1">{winRate}%</div>
-        </div>
+        <TiltCard>
+          <div className="hud-panel" style={{ padding: "1rem" }}>
+            <div className="eyebrow mb-1">Win rate</div>
+            <div className="glow-num text-2xl font-semibold mt-1">{winRate}%</div>
+          </div>
+        </TiltCard>
         <StatCountUp label="Games" v={p.games} />
         <StatCountUp label="Kills" v={p.kills} />
         <StatCountUp label="Tasks done" v={p.tasksDone} />
@@ -117,11 +120,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
 function StatCountUp({ label, v }: { label: string; v: number }) {
   return (
-    <div className="hud-panel" style={{ padding: "1rem" }}>
-      <div className="eyebrow mb-1">{label}</div>
-      <div className="glow-num text-2xl font-semibold mt-1">
-        <CountUp value={v} />
+    <TiltCard>
+      <div className="hud-panel" style={{ padding: "1rem" }}>
+        <div className="eyebrow mb-1">{label}</div>
+        <div className="glow-num text-2xl font-semibold mt-1">
+          <CountUp value={v} />
+        </div>
       </div>
-    </div>
+    </TiltCard>
   );
 }

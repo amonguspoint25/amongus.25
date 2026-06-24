@@ -5,6 +5,8 @@ import { Reveal } from "@/components/Reveal";
 import { HeroParallax } from "@/components/HeroParallax";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { CountUp } from "@/components/CountUp";
+import { TiltCard } from "@/components/TiltCard";
+import { Magnetic } from "@/components/Magnetic";
 import type { ReactNode } from "react";
 
 export default async function Home() {
@@ -29,7 +31,9 @@ export default async function Home() {
           logs every shot, kill, and task, and the rankings never lie.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
-          <Link href="/leaderboard" className="btn-primary">ACCESS RANKINGS →</Link>
+          <Magnetic>
+            <Link href="/leaderboard" className="btn-primary">ACCESS RANKINGS →</Link>
+          </Magnetic>
           <Link href="#how" className="btn-ghost">HOW IT WORKS</Link>
         </div>
         <dl className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 data text-xs sm:text-sm" style={{ color: "var(--muted)" }}>
@@ -86,22 +90,26 @@ export default async function Home() {
           </Reveal>
           <div className="mt-10 grid md:grid-cols-2 gap-4">
             <Reveal>
-              <div className="hud-panel hud-corners p-6 h-full">
-                <p className="eyebrow">CREW RATING</p>
-                <p className="mt-2" style={{ color: "var(--muted)" }}>
-                  Earned by finishing tasks fast, voting out impostors with correct shots, and surviving.
-                  Wasting votes on innocent crew costs you.
-                </p>
-              </div>
+              <TiltCard className="h-full">
+                <div className="hud-panel hud-corners p-6 h-full">
+                  <p className="eyebrow">CREW RATING</p>
+                  <p className="mt-2" style={{ color: "var(--muted)" }}>
+                    Earned by finishing tasks fast, voting out impostors with correct shots, and surviving.
+                    Wasting votes on innocent crew costs you.
+                  </p>
+                </div>
+              </TiltCard>
             </Reveal>
             <Reveal delay={90}>
-              <div className="hud-panel hud-corners p-6 h-full">
-                <p className="eyebrow" style={{ color: "var(--alert)" }}>IMPOSTOR RATING</p>
-                <p className="mt-2" style={{ color: "var(--muted)" }}>
-                  Earned by killing efficiently, staying off the suspect list, and closing out the round.
-                  Get ejected and it stings.
-                </p>
-              </div>
+              <TiltCard className="h-full">
+                <div className="hud-panel hud-corners p-6 h-full">
+                  <p className="eyebrow" style={{ color: "var(--alert)" }}>IMPOSTOR RATING</p>
+                  <p className="mt-2" style={{ color: "var(--muted)" }}>
+                    Earned by killing efficiently, staying off the suspect list, and closing out the round.
+                    Get ejected and it stings.
+                  </p>
+                </div>
+              </TiltCard>
             </Reveal>
           </div>
 
@@ -124,12 +132,14 @@ export default async function Home() {
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {TIERS.map((t, i) => (
               <Reveal key={t.name} delay={i * 60}>
-                <div className="hud-panel p-3 flex flex-col items-center text-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={t.image} alt="" width={48} height={48} />
-                  <span className="eyebrow" style={{ color: t.name === "Top Impostor" ? "var(--alert)" : "var(--signal)" }}>{t.name}</span>
-                  <span className="glow-num text-xs" style={{ color: "var(--muted)" }}>{t.min}+</span>
-                </div>
+                <TiltCard>
+                  <div className="hud-panel p-3 flex flex-col items-center text-center gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={t.image} alt="" width={48} height={48} />
+                    <span className="eyebrow" style={{ color: t.name === "Top Impostor" ? "var(--alert)" : "var(--signal)" }}>{t.name}</span>
+                    <span className="glow-num text-xs" style={{ color: "var(--muted)" }}>{t.min}+</span>
+                  </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -178,7 +188,9 @@ export default async function Home() {
               .25 server, and every match starts counting toward your rank.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
-              <Link href="/link" className="btn-primary">GET MY LINK CODE →</Link>
+              <Magnetic>
+                <Link href="/link" className="btn-primary">GET MY LINK CODE →</Link>
+              </Magnetic>
               <Link href="/leaderboard" className="btn-ghost">SEE THE LADDER</Link>
             </div>
           </Reveal>
