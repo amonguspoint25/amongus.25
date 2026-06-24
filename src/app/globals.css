@@ -201,6 +201,84 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .btn-ghost:hover { color: var(--signal); border-color: var(--signal); }
 
+/* ── Living-still hero: pointer-parallax depth layers ── */
+.hero-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 3.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+}
+.hero-img {
+  position: absolute;
+  inset: -7%;
+  background: url("/media/hero.png") center / cover no-repeat;
+  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -16px), 0) scale(1.06);
+  animation: heroBreathe 16s ease-in-out infinite;
+  will-change: transform, filter;
+}
+@keyframes heroBreathe {
+  0%, 100% { filter: brightness(0.92) saturate(1.05); }
+  50% { filter: brightness(1.04) saturate(1.12); }
+}
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.5;
+  pointer-events: none;
+  will-change: transform;
+}
+.hero-orb-a {
+  width: 42vw; height: 42vw; left: 6%; top: 8%;
+  background: radial-gradient(circle, rgba(61, 139, 255, 0.55), transparent 70%);
+  transform: translate3d(calc(var(--px, 0) * -48px), calc(var(--py, 0) * -36px), 0);
+}
+.hero-orb-b {
+  width: 36vw; height: 36vw; right: 4%; bottom: 4%;
+  background: radial-gradient(circle, rgba(56, 225, 255, 0.38), transparent 70%);
+  transform: translate3d(calc(var(--px, 0) * 56px), calc(var(--py, 0) * 42px), 0);
+}
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 30%, transparent 36%, rgba(5,7,13,0.74) 74%, var(--void)),
+    linear-gradient(transparent 46%, var(--void));
+}
+.hero-frame {
+  position: absolute;
+  inset: 1rem;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+@media (min-width: 640px) { .hero-frame { inset: 2rem; } }
+.hero-content {
+  position: relative;
+  z-index: 10;
+  max-width: 48rem;
+  transform: translate3d(calc(var(--px, 0) * 9px), calc(var(--py, 0) * 7px), 0);
+}
+.hero-scrollcue {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-img { animation: none; transform: scale(1.04); }
+  .hero-img, .hero-orb, .hero-content { transform: none; }
+}
+
 /* A scroll cue under the hero */
 .scroll-cue {
   width: 22px; height: 36px;
