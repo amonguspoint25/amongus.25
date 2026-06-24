@@ -10,6 +10,7 @@ const TAB_CLIP = "polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 1
 export function LeaderboardTable() {
   const [sort, setSort] = useState("overall");
   const [rows, setRows] = useState<Row[]>([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     let on = true;
@@ -24,8 +25,34 @@ export function LeaderboardTable() {
     { key: "overall", label: "OVERALL" }, { key: "crew", label: "CREW" }, { key: "imp", label: "IMP" },
   ];
 
+  const filteredRows = rows.filter((r) =>
+    r.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="hud-panel hud-corners" style={{ padding: "1.5rem" }}>
+      {/* Search input */}
+      <div style={{ marginBottom: "1rem" }}>
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="// SEARCH OPERATIVES"
+          aria-label="Search players"
+          style={{
+            width: "100%",
+            background: "var(--hud)",
+            border: "1px solid var(--line)",
+            color: "var(--text)",
+            fontFamily: "var(--font-mono), ui-monospace, monospace",
+            fontSize: "0.8rem",
+            letterSpacing: "0.1em",
+            padding: "0.45rem 0.75rem",
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
       <div className="flex gap-2 mb-5">
         {tabs.map((t) => (
           <button
@@ -61,7 +88,7 @@ export function LeaderboardTable() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {filteredRows.map((r, i) => {
             const tier = tierFor(r.overallElo);
             const isTopImpostor = tier.name === "Top Impostor";
             return (
@@ -100,6 +127,11 @@ export function LeaderboardTable() {
               </tr>
             );
           })}
+          {filteredRows.length === 0 && rows.length > 0 && (
+            <tr>
+              <td className="data p-6" colSpan={6} style={{ color: "var(--muted)" }}>No operatives match.</td>
+            </tr>
+          )}
           {rows.length === 0 && (
             <tr>
               <td className="data p-6" colSpan={6} style={{ color: "var(--muted)" }}>No players yet.</td>

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import { CopyButton } from "@/components/CopyButton";
 
 export const metadata = { title: "Link account — Among Us .25 Ranked" };
 
@@ -24,18 +25,21 @@ export default async function LinkPage() {
       <h1 className="text-3xl font-extrabold mb-4">Link your account</h1>
       <div className="hud-panel hud-corners" style={{ padding: "1.5rem" }}>
         <p className="eyebrow mb-2">Your one-time link code</p>
-        <p
-          className="glow-num"
-          style={{
-            fontSize: "2rem",
-            letterSpacing: "0.35em",
-            color: "var(--signal)",
-            textShadow: "var(--glow-cyan)",
-            margin: "0.5rem 0 1rem",
-          }}
-        >
-          {player?.linkCode ?? "—"}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", margin: "0.5rem 0 1rem" }}>
+          <p
+            className="glow-num"
+            style={{
+              fontSize: "2rem",
+              letterSpacing: "0.35em",
+              color: "var(--signal)",
+              textShadow: "var(--glow-cyan)",
+              margin: 0,
+            }}
+          >
+            {player?.linkCode ?? "—"}
+          </p>
+          {player?.linkCode && <CopyButton value={player.linkCode} />}
+        </div>
         <p className="data" style={{ color: isLinked ? "var(--signal)" : "var(--muted)" }}>
           {isLinked
             ? "✓ Linked — your in-game matches now count toward your rank."

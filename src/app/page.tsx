@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { TIERS, tierFor } from "@/lib/rank";
 import { Reveal } from "@/components/Reveal";
 import { HeroParallax } from "@/components/HeroParallax";
+import { ActivityTicker } from "@/components/ActivityTicker";
+import { CountUp } from "@/components/CountUp";
+import type { ReactNode } from "react";
 
 export default async function Home() {
   const [topPlayers, tournaments, playerCount, matchCount] = await Promise.all([
@@ -30,13 +33,15 @@ export default async function Home() {
           <Link href="#how" className="btn-ghost">HOW IT WORKS</Link>
         </div>
         <dl className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 data text-xs sm:text-sm" style={{ color: "var(--muted)" }}>
-          <Readout k="OPERATIVES" v={String(playerCount)} />
+          <Readout k="OPERATIVES" v={<CountUp value={playerCount} />} />
           <span style={{ color: "var(--line)" }}>//</span>
-          <Readout k="MATCHES" v={String(matchCount)} />
+          <Readout k="MATCHES" v={<CountUp value={matchCount} />} />
           <span style={{ color: "var(--line)" }}>//</span>
           <Readout k="LADDERS" v="CREW · IMP" />
         </dl>
       </HeroParallax>
+
+      <ActivityTicker />
 
       {/* ─────────────────────── LIVE RANKINGS ─────────────────────── */}
       <section id="rankings" className="section-pad px-6 cv-section">
@@ -192,7 +197,7 @@ function SectionHead({ eyebrow, title }: { eyebrow: string; title: string }) {
   );
 }
 
-function Readout({ k, v }: { k: string; v: string }) {
+function Readout({ k, v }: { k: string; v: ReactNode }) {
   return (
     <div className="flex items-center gap-2">
       <span className="eyebrow" style={{ letterSpacing: "0.18em" }}>{k}</span>

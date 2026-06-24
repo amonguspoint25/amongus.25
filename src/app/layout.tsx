@@ -5,6 +5,7 @@ import { Nav } from "@/components/Nav";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { BootIntro } from "@/components/BootIntro";
 import { HudCursor } from "@/components/HudCursor";
+import { CommandPalette } from "@/components/CommandPalette";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({
         <ScrollProgress />
         <BootIntro />
         <HudCursor />
+        <CommandPalette />
         <Nav />
         {children}
       </body>
