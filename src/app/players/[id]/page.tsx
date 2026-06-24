@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { tierFor } from "@/lib/rank";
+import { PLACEMENT_GAMES } from "@/lib/elo/placement";
 import Link from "next/link";
 import { CountUp } from "@/components/CountUp";
 import { Sparkline } from "@/components/Sparkline";
@@ -39,6 +40,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
   const winRate = p.games ? Math.round(((p.crewWins + p.impWins) / p.games) * 100) : 0;
   const tier = tierFor(p.overallElo);
+  const provisional = p.games < PLACEMENT_GAMES;
   const isTopImpostor = tier.name === "Top Impostor";
   const sparkPoints = historyParticipants.map((h) => h.eloAfter);
 
@@ -51,7 +53,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={tier.image} alt="" width={48} height={48} />
         <span>
-          <span style={{ color: isTopImpostor ? "var(--alert)" : "var(--signal)" }}>{tier.name}</span>
+          {provisional ? (
+            <span
+              className="eyebrow"
+              style={{ color: "var(--muted)", border: "1px solid var(--line)", padding: "2px 8px" }}
+            >
+              PROVISIONAL · {p.games}/{PLACEMENT_GAMES} placements
+            </span>
+          ) : (
+            <span style={{ color: isTopImpostor ? "var(--alert)" : "var(--signal)" }}>{tier.name}</span>
+          )}
           {" · "}Overall{" "}
           <span className="glow-num">
             <CountUp value={Math.round(p.overallElo)} />
