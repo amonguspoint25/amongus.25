@@ -11,8 +11,8 @@ const TABS = [
 export function Nav() {
   return (
     <header
-      className="sticky top-0 z-50 backdrop-blur-md"
-      style={{ background: "rgba(5,7,13,0.82)", borderBottom: "1px solid var(--line)" }}
+      className="sticky top-0 z-50"
+      style={{ background: "rgba(6,9,16,0.94)", borderBottom: "1px solid var(--line)" }}
     >
       <nav className="mx-auto max-w-6xl flex items-center gap-4 px-5 sm:px-8 h-14">
         <Link href="/" className="flex items-center gap-2 font-display font-bold tracking-wide">

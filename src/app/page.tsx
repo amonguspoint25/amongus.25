@@ -39,7 +39,7 @@ export default async function Home() {
       </HeroParallax>
 
       {/* ─────────────────────── LIVE RANKINGS ─────────────────────── */}
-      <section id="rankings" className="section-pad px-6">
+      <section id="rankings" className="section-pad px-6 cv-section">
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// LIVE RANKINGS" title="The ladder never lies" />
@@ -74,7 +74,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── HOW RANKING WORKS ─────────────────────── */}
-      <section id="how" className="section-pad px-6" style={{ background: "linear-gradient(var(--void), #070b14, var(--void))" }}>
+      <section id="how" className="section-pad px-6 cv-section" style={{ background: "linear-gradient(var(--void), #070b14, var(--void))" }}>
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// RANKING PROTOCOL" title="Two roles. Two ratings." />
@@ -132,7 +132,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── TOURNAMENTS ─────────────────────── */}
-      <section id="tournaments" className="section-pad px-6">
+      <section id="tournaments" className="section-pad px-6 cv-section">
         <div className="mx-auto max-w-5xl">
           <Reveal>
             <SectionHead eyebrow="// BRACKET CONTROL" title="Prove it in a bracket" />
@@ -161,7 +161,7 @@ export default async function Home() {
       </section>
 
       {/* ─────────────────────── JOIN ─────────────────────── */}
-      <section id="join" className="section-pad px-6">
+      <section id="join" className="section-pad px-6 cv-section">
         <div className="mx-auto max-w-3xl text-center">
           <Reveal>
             <p className="eyebrow">// SECURE UPLINK</p>
