@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { realPlayersWhere } from "@/lib/players";
+import { realPlayersWhere, rankedOverallWhere } from "@/lib/players";
 import { TIERS, tierFor } from "@/lib/rank";
 import { Reveal } from "@/components/Reveal";
 import { HeroParallax } from "@/components/HeroParallax";
@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 
 export default async function Home() {
   const [topPlayers, tournaments, playerCount, matchCount] = await Promise.all([
-    prisma.player.findMany({ where: realPlayersWhere, orderBy: { overallElo: "desc" }, take: 5 }),
+    prisma.player.findMany({ where: rankedOverallWhere, orderBy: { overallElo: "desc" }, take: 5 }),
     prisma.tournament.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
     prisma.player.count({ where: realPlayersWhere }),
     prisma.match.count(),
