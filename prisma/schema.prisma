@@ -21,8 +21,9 @@ model Player {
   user           User               @relation(fields: [userId], references: [id])
   userId         String             @unique
   displayName    String
-  linkCode       String             @unique
-  isLinked       Boolean            @default(false)
+  linkCode          String?   @unique
+  linkCodeExpiresAt DateTime?
+  isLinked          Boolean   @default(false)
   crewElo        Float              @default(1000)
   impElo         Float              @default(1000)
   overallElo     Float              @default(1000)
