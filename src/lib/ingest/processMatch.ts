@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { computePerf } from "../elo/perf";
 import { updateRating } from "../elo/update";
+import { kForGames } from "../elo/placement";
 import type { MatchPayload } from "./schema";
 import { Prisma } from "@prisma/client";
 
@@ -44,7 +45,9 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
         const rating = isImp ? player.impElo : player.crewElo;
         const opponentAvg = isImp ? crewAvg : impAvg;
         const perf = computePerf(p.role, p);
-        const { eloAfter, eloDelta } = updateRating({ rating, opponentAvg, won: p.won, perf });
+        const roleGames = isImp ? player.impGames : player.crewGames;
+        const k = kForGames(roleGames);
+        const { eloAfter, eloDelta } = updateRating({ rating, opponentAvg, won: p.won, perf, k });
         await tx.matchParticipant.create({
           data: {
             matchId: match.id,
@@ -79,6 +82,8 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
             crewWins: { increment: !isImp && p.won ? 1 : 0 },
             impWins: { increment: isImp && p.won ? 1 : 0 },
             games: { increment: 1 },
+            crewGames: { increment: isImp ? 0 : 1 },
+            impGames: { increment: isImp ? 1 : 0 },
           },
         });
       }
