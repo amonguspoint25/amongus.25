@@ -90,28 +90,24 @@ export default async function Home() {
           <Reveal>
             <SectionHead eyebrow="// RANKING PROTOCOL" title="Two roles. Two ratings." />
           </Reveal>
-          <div className="mt-10 grid md:grid-cols-2 gap-4">
+          <div className="rating-pair mt-10 grid md:grid-cols-2 gap-4">
             <Reveal>
-              <TiltCard className="h-full">
-                <div className="hud-panel hud-corners p-6 h-full">
-                  <p className="eyebrow">CREW RATING</p>
-                  <p className="mt-2" style={{ color: "var(--muted)" }}>
-                    Earned by finishing tasks fast, voting out impostors with correct shots, and surviving.
-                    Wasting votes on innocent crew costs you.
-                  </p>
-                </div>
-              </TiltCard>
+              <div className="rating-card hud-panel hud-corners p-6 h-full">
+                <p className="eyebrow">CREW RATING</p>
+                <p className="mt-2" style={{ color: "var(--muted)" }}>
+                  Earned by finishing tasks fast, voting out impostors with correct shots, and surviving.
+                  Wasting votes on innocent crew costs you.
+                </p>
+              </div>
             </Reveal>
             <Reveal delay={90}>
-              <TiltCard className="h-full">
-                <div className="hud-panel hud-corners p-6 h-full">
-                  <p className="eyebrow" style={{ color: "var(--alert)" }}>IMPOSTOR RATING</p>
-                  <p className="mt-2" style={{ color: "var(--muted)" }}>
-                    Earned by killing efficiently, staying off the suspect list, and closing out the round.
-                    Get ejected and it stings.
-                  </p>
-                </div>
-              </TiltCard>
+              <div className="rating-card rating-card-imp hud-panel hud-corners p-6 h-full">
+                <p className="eyebrow" style={{ color: "var(--alert)" }}>IMPOSTOR RATING</p>
+                <p className="mt-2" style={{ color: "var(--muted)" }}>
+                  Earned by killing efficiently, staying off the suspect list, and closing out the round.
+                  Get ejected and it stings.
+                </p>
+              </div>
             </Reveal>
           </div>
 
@@ -135,10 +131,13 @@ export default async function Home() {
             {TIERS.map((t, i) => (
               <Reveal key={t.name} delay={i * 60}>
                 <TiltCard>
-                  <div className="hud-panel p-3 flex flex-col items-center text-center gap-2">
+                  <div
+                    className="hud-panel tier-card p-3 flex flex-col items-center text-center gap-2"
+                    style={{ ["--tier" as string]: t.glow }}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={t.image} alt="" width={48} height={48} />
-                    <span className="eyebrow" style={{ color: t.name === "Top Impostor" ? "var(--alert)" : "var(--signal)" }}>{t.name}</span>
+                    <span className="eyebrow" style={{ color: t.glow }}>{t.name}</span>
                     <span className="glow-num text-xs" style={{ color: "var(--muted)" }}>{t.min}+</span>
                   </div>
                 </TiltCard>
