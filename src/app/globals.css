@@ -194,12 +194,15 @@ section[id] { scroll-margin-top: 4.5rem; }
 }
 .btn-discord:hover { filter: brightness(1.12); }
 
-/* Rank-tier cards: hover glows in the tier's own colour (--tier).
+/* Rank-tier cards: resting + hover glows in the tier's own colour (--tier).
    .hud-panel uses clip-path, which clips box-shadow — so use filter:drop-shadow,
    which follows the clipped shape and renders the glow outside it. */
-.tier-card { transition: filter 0.25s ease; }
+.tier-card {
+  transition: filter 0.25s ease;
+  filter: drop-shadow(0 0 13px var(--tier)) drop-shadow(0 0 5px var(--tier));
+}
 .tier-card:hover {
-  filter: drop-shadow(0 0 13px var(--tier)) drop-shadow(0 0 4px var(--tier));
+  filter: drop-shadow(0 0 24px var(--tier)) drop-shadow(0 0 9px var(--tier)) drop-shadow(0 0 3px var(--tier));
 }
 .tier-card:hover img { filter: drop-shadow(0 0 6px var(--tier)); }
 
