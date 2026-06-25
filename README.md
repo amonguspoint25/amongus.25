@@ -70,10 +70,14 @@ npx prisma studio   # open the User table, set isAdmin = true on your row
   stats (kills/time-to-kill for impostors; tasks/shots/time-to-task for crew).
 - The performance weighting lives in `src/lib/elo/perf.ts` (`computePerf`) — tune it to taste.
 
-## Ingestion API contract (for the custom server)
+## Ingestion API contract v1 (for the custom server)
 
 The server sends each finished match to the website. Both endpoints authenticate with
 `Authorization: Bearer <INGEST_TOKEN>` (timing-safe, fail-closed).
+
+**Identity flow:** match ingestion keys players on `discordId`. The server learns a player's
+`discordId` from the `/api/link` redeem response (below) when they link in-game, then caches
+in-game player → `discordId` for future match reports.
 
 ### `POST /api/ingest/match`
 
@@ -115,7 +119,15 @@ Called when a player redeems their link code in-game:
 { "linkCode": "AB23CD45" }
 ```
 
-Marks that player linked so their future matches count. `404` if the code is unknown.
+Marks that player linked so their future matches count. On success returns the identity the
+server needs to report that player's matches:
+
+```json
+{ "ok": true, "playerId": "clx…", "discordId": "123456789", "displayName": "Red" }
+```
+
+`404` (`{ "error": "invalid or expired code" }`) for any unknown, expired, or already-used code —
+one response for all three, no existence oracle. Codes are single-use and expire 15 min after issue.
 
 ## Deployment (Vercel + Neon)
 

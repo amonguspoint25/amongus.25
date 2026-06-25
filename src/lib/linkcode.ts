@@ -49,15 +49,17 @@ export async function issueLinkCode(playerId: string, now: Date): Promise<string
 // Redeem a code: if it exists and is unexpired, link the player and clear the code
 // (one-time use). Returns { ok: false } for missing, expired, or already-used codes —
 // the caller maps all of these to a single response (no existence oracle).
+// On success returns discordId + displayName so the calling game server can map its
+// in-game player to the discordId that match ingestion (/api/ingest/match) keys on.
 export async function redeemLinkCode(
   linkCode: string,
   now: Date,
-): Promise<{ ok: true; playerId: string } | { ok: false }> {
-  const player = await prisma.player.findUnique({ where: { linkCode } });
+): Promise<{ ok: true; playerId: string; discordId: string; displayName: string } | { ok: false }> {
+  const player = await prisma.player.findUnique({ where: { linkCode }, include: { user: true } });
   if (!player || isExpired(player.linkCodeExpiresAt, now)) return { ok: false };
   await prisma.player.update({
     where: { id: player.id },
     data: { isLinked: true, linkCode: null, linkCodeExpiresAt: null },
   });
-  return { ok: true, playerId: player.id };
+  return { ok: true, playerId: player.id, discordId: player.user.discordId, displayName: player.displayName };
 }

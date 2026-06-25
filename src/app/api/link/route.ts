@@ -17,5 +17,11 @@ export async function POST(req: NextRequest) {
     // Single response for missing / expired / already-used — no existence oracle.
     return NextResponse.json({ error: "invalid or expired code" }, { status: 404 });
   }
-  return NextResponse.json({ ok: true, playerId: result.playerId });
+  // Return discordId so the game server can key future match reports on it.
+  return NextResponse.json({
+    ok: true,
+    playerId: result.playerId,
+    discordId: result.discordId,
+    displayName: result.displayName,
+  });
 }

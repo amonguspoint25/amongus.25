@@ -29,7 +29,7 @@ describe("issueLinkCode / redeemLinkCode", () => {
     const now = new Date();
     const code = await issueLinkCode(p.id, now);
     const res = await redeemLinkCode(code, now);
-    expect(res).toEqual({ ok: true, playerId: p.id });
+    expect(res).toEqual({ ok: true, playerId: p.id, discordId: "redeem1", displayName: "redeem1" });
     const row = await prisma.player.findUnique({ where: { id: p.id } });
     expect(row!.isLinked).toBe(true);
     expect(row!.linkCode).toBeNull();
