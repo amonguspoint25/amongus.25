@@ -141,7 +141,7 @@ model BracketMatch {
 
 model HostKey {
   id          String    @id @default(cuid())
-  host        User      @relation(fields: [hostUserId], references: [id])
+  host        User      @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
   hostUserId  String
   label       String
   tokenHash   String    @unique

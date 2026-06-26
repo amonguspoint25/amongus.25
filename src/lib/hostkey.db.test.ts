@@ -11,7 +11,12 @@ async function makeHost(tag: string) {
 
 describe("host key DB functions", () => {
   beforeEach(async () => {
+    // Clean the full FK chain (Player/Match → User) like the other DB tests, so
+    // leftover rows from other suites don't block user.deleteMany.
     await prisma.hostKey.deleteMany();
+    await prisma.matchParticipant.deleteMany();
+    await prisma.match.deleteMany();
+    await prisma.player.deleteMany();
     await prisma.user.deleteMany();
   });
 
