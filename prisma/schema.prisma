@@ -12,7 +12,9 @@ model User {
   username  String
   avatar    String?
   isAdmin   Boolean  @default(false)
+  isHost    Boolean  @default(false)
   player    Player?
+  hostKeys  HostKey[]
   createdAt DateTime @default(now())
 }
 
@@ -135,4 +137,19 @@ model BracketMatch {
   winnerNextSlot    Slot?
   loserNextMatchId  String?
   loserNextSlot     Slot?
+}
+
+model HostKey {
+  id          String    @id @default(cuid())
+  host        User      @relation(fields: [hostUserId], references: [id])
+  hostUserId  String
+  label       String
+  tokenHash   String    @unique
+  tokenPrefix String
+  armedUntil  DateTime?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([hostUserId])
 }
