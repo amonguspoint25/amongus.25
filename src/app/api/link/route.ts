@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { bearerOk } from "@/lib/serverAuth";
+import { authorizeIngest } from "@/lib/hostkey";
 import { redeemLinkCode } from "@/lib/linkcode";
 
 // Called by the trusted game server when a player redeems their link code in-game.
 export async function POST(req: NextRequest) {
-  if (!bearerOk(req.headers.get("authorization"))) {
+  if (!(await authorizeIngest(req.headers.get("authorization")))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const body = await req.json().catch(() => null);

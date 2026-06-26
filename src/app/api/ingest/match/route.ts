@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { bearerOk } from "@/lib/serverAuth";
+import { authorizeIngest } from "@/lib/hostkey";
 import { matchPayloadSchema } from "@/lib/ingest/schema";
 import { processMatch } from "@/lib/ingest/processMatch";
 
 export async function POST(req: NextRequest) {
-  if (!bearerOk(req.headers.get("authorization"))) {
+  if (!(await authorizeIngest(req.headers.get("authorization")))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const parsed = matchPayloadSchema.safeParse(await req.json().catch(() => null));
