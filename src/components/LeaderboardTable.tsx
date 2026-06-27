@@ -13,14 +13,22 @@ const TAB_CLIP = "polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 1
 
 export function LeaderboardTable() {
   const [sort, setSort] = useState("overall");
+  const [board, setBoard] = useState("current");
+  const [seasons, setSeasons] = useState<{ number: number; active: boolean }[]>([]);
   const [ranked, setRanked] = useState<Row[]>([]);
   const [provisional, setProvisional] = useState<Row[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     let on = true;
+    fetch("/api/seasons").then((r) => r.json()).then((d) => { if (on) setSeasons(d.seasons ?? []); });
+    return () => { on = false; };
+  }, []);
+
+  useEffect(() => {
+    let on = true;
     const load = () =>
-      fetch(`/api/leaderboard?sort=${sort}`)
+      fetch(`/api/leaderboard?board=${board}&sort=${sort}`)
         .then((r) => r.json())
         .then((d) => {
           if (!on) return;
@@ -30,7 +38,7 @@ export function LeaderboardTable() {
     load();
     const id = setInterval(load, 15000);
     return () => { on = false; clearInterval(id); };
-  }, [sort]);
+  }, [sort, board]);
 
   const tabs: { key: string; label: string }[] = [
     { key: "overall", label: "OVERALL" }, { key: "crew", label: "CREW" }, { key: "imp", label: "IMP" },
@@ -42,6 +50,28 @@ export function LeaderboardTable() {
 
   return (
     <div className="hud-panel hud-corners" style={{ padding: "1.5rem" }}>
+      <div className="flex gap-2 mb-4" style={{ flexWrap: "wrap" }}>
+        {[
+          { key: "current", label: "CURRENT SEASON" },
+          { key: "all-time", label: "ALL-TIME" },
+          ...seasons.filter((s) => !s.active).map((s) => ({ key: `season-${s.number}`, label: `SEASON ${s.number}` })),
+        ].map((b) => (
+          <button
+            key={b.key}
+            onClick={() => setBoard(b.key)}
+            style={{
+              fontFamily: "var(--font-display), system-ui, sans-serif",
+              fontSize: "0.7rem", letterSpacing: "0.12em", padding: "5px 12px", cursor: "pointer",
+              border: board === b.key ? "none" : "1px solid var(--line)",
+              background: board === b.key ? "var(--signal)" : "transparent",
+              color: board === b.key ? "#04060b" : "var(--muted)",
+              fontWeight: board === b.key ? 700 : 400,
+            }}
+          >
+            {b.label}
+          </button>
+        ))}
+      </div>
       {/* Search input */}
       <div style={{ marginBottom: "1rem" }}>
         <input
