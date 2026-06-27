@@ -27,9 +27,6 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
     .map((p) => ({ p, player: byDiscord.get(p.discordId) }))
     .filter((r): r is { p: typeof r.p; player: NonNullable<typeof r.player> } => !!r.player);
 
-  const crewAvg = avg(rows.filter((r) => r.p.role === "CREW").map((r) => r.player.crewElo));
-  const impAvg = avg(rows.filter((r) => r.p.role === "IMPOSTOR").map((r) => r.player.impElo));
-
   try {
     return await prisma.$transaction(async (tx) => {
       const season = await getOrCreateActiveSeason(tx);

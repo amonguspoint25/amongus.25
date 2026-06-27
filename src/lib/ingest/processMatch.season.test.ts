@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { it, expect, afterAll } from "vitest";
 import { prisma } from "@/lib/db";
 import { processMatch } from "./processMatch";
 import type { MatchPayload } from "./schema";
@@ -36,4 +36,12 @@ it("attributes a match to the active season and seeds PlayerSeason at 1000", asy
   expect(ps?.games).toBe(1);
   expect(ps?.impWins).toBe(1);
   expect(ps?.impElo).toBeGreaterThan(1000); // won → season rating rose from the 1000 seed
+
+  // The 1000 season seed flowed through to the participant's eloBefore.
+  const part = await prisma.matchParticipant.findFirst({ where: { matchId, playerId: a.playerId } });
+  expect(part?.eloBefore).toBe(1000);
+
+  // Losing crew player dropped below the 1000 seed in their season rating.
+  const crewPs = await prisma.playerSeason.findFirst({ where: { playerId: b.playerId } });
+  expect(crewPs?.crewElo).toBeLessThan(1000);
 });
