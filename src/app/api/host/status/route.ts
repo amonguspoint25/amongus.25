@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hostStatus } from "@/lib/hostkey";
+import { resolveHostKey } from "@/lib/hostkey";
 
-// Polled by the host mod (Authorization: Bearer <host key>) to learn if ranked is on.
+// Called by the host mod on load to validate its host key (security layer 2: the mod
+// disables all ranked features unless this returns 200). 200 = valid, 401 = missing,
+// fake, or revoked key.
 export async function GET(req: NextRequest) {
-  const status = await hostStatus(req.headers.get("authorization"), new Date());
-  if (!status) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json({ armed: status.armed, armedUntil: status.armedUntil });
+  const key = await resolveHostKey(req.headers.get("authorization"));
+  if (!key) return NextResponse.json({ valid: false }, { status: 401 });
+  return NextResponse.json({ valid: true });
 }

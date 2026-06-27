@@ -29,9 +29,7 @@ export default async function AdminHostsPage() {
               <div className="mt-3 space-y-2">
                 {u.hostKeys.map((k) => (
                   <div key={k.id} className="flex items-center justify-between text-sm">
-                    <code className="opacity-70">
-                      {k.tokenPrefix}… {k.armedUntil ? "(armed)" : ""}
-                    </code>
+                    <code className="opacity-70">{k.tokenPrefix}…</code>
                     <form action={revokeKey.bind(null, k.id)}>
                       <button className="rounded bg-red-600/80 px-2 py-0.5 text-xs">Revoke</button>
                     </form>

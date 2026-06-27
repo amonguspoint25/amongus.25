@@ -184,7 +184,6 @@ model HostKey {
   label       String
   tokenHash   String    @unique
   tokenPrefix String
-  armedUntil  DateTime?
   revokedAt   DateTime?
   lastUsedAt  DateTime?
   createdAt   DateTime  @default(now())

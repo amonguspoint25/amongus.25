@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { genHostKey, hashToken, parseBearer, isArmed, HOST_ARM_TTL_MS } from "./hostkey";
+import { genHostKey, hashToken, parseBearer } from "./hostkey";
 
 describe("host key crypto", () => {
   it("genHostKey returns a prefixed raw secret, its sha256 hash, and a display prefix", () => {
@@ -26,16 +26,5 @@ describe("host key crypto", () => {
     expect(parseBearer(null)).toBeNull();
     expect(parseBearer("Basic abc")).toBeNull();
     expect(parseBearer("Bearer ")).toBeNull();
-  });
-
-  it("isArmed is true only while armedUntil is in the future", () => {
-    const now = new Date("2026-06-26T12:00:00Z");
-    expect(isArmed(null, now)).toBe(false);
-    expect(isArmed(new Date(now.getTime() + 1000), now)).toBe(true);
-    expect(isArmed(new Date(now.getTime() - 1000), now)).toBe(false);
-  });
-
-  it("HOST_ARM_TTL_MS is 6 hours", () => {
-    expect(HOST_ARM_TTL_MS).toBe(6 * 60 * 60 * 1000);
   });
 });
