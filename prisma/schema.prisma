@@ -21,6 +21,7 @@ model Player {
   user           User               @relation(fields: [userId], references: [id])
   userId         String             @unique
   displayName    String
+  friendCode        String?   @unique
   linkCode          String?   @unique
   linkCodeExpiresAt DateTime?
   isLinked          Boolean   @default(false)
