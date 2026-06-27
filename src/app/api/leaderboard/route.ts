@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { realPlayersWhere } from "@/lib/players";
 import { partitionProvisional, type LeaderboardSort, type PlayerRow } from "@/lib/leaderboard";
-import { getOrCreateActiveSeason } from "@/lib/season/season";
 
 export async function GET(req: NextRequest) {
   const sortParam = req.nextUrl.searchParams.get("sort") ?? "overall";
@@ -24,7 +23,7 @@ export async function GET(req: NextRequest) {
     const m = /^season-(\d+)$/.exec(board);
     const season = m
       ? await prisma.season.findUnique({ where: { number: Number(m[1]) } })
-      : await getOrCreateActiveSeason(prisma);
+      : await prisma.season.findFirst({ where: { endedAt: null }, orderBy: { number: "desc" } });
     if (season) {
       const ps = await prisma.playerSeason.findMany({
         where: { seasonId: season.id, NOT: { player: { user: { discordId: { startsWith: "demo-" } } } } },

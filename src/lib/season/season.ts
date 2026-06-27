@@ -5,6 +5,9 @@ export type SeasonTx = Prisma.TransactionClient | PrismaClient;
 
 // Active season = the single row with endedAt == null. Auto-creates Season 1 if none
 // exists so a match is never dropped for lack of a season.
+// ponytail: P2002 catch helps for standalone calls only. Inside processMatch's $transaction
+// the failed insert aborts the whole tx so the re-read also fails; the match request errors
+// and self-heals on the mod's retry.
 export async function getOrCreateActiveSeason(tx: SeasonTx): Promise<Season> {
   const active = await tx.season.findFirst({ where: { endedAt: null }, orderBy: { number: "desc" } });
   if (active) return active;
@@ -21,6 +24,8 @@ export async function getOrCreateActiveSeason(tx: SeasonTx): Promise<Season> {
 
 // Get or lazily create a player's rating row for a season, seeded by a soft reset of
 // their most recent prior season (or 1000 if they have none).
+// ponytail: same P2002 caveat as getOrCreateActiveSeason — catch only recovers for
+// standalone calls; inside processMatch's outer tx the whole tx aborts and self-heals on retry.
 export async function getOrCreatePlayerSeason(
   tx: SeasonTx,
   playerId: string,
