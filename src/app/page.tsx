@@ -9,6 +9,9 @@ import { TiltCard } from "@/components/TiltCard";
 import { Magnetic } from "@/components/Magnetic";
 import type { ReactNode } from "react";
 
+// Renders per-request (queries the DB), so it must not be prerendered at build.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [topPlayers, tournaments, playerCount, matchCount] = await Promise.all([
     prisma.player.findMany({ where: rankedOverallWhere, orderBy: { overallElo: "desc" }, take: 5 }),

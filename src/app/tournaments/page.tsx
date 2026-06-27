@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 export const metadata = { title: "Tournaments — Among Us .25 Ranked" };
+// Queries the DB on render, so it must not be prerendered at build.
+export const dynamic = "force-dynamic";
 
 const BTN_CLIP = "polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%)";
 
