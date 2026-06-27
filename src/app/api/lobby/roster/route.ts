@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { bearerOk } from "@/lib/serverAuth";
+import { authorizeIngest } from "@/lib/hostkey";
 import { prisma } from "@/lib/db";
 import { normalizeFriendCode } from "@/lib/friendCode";
 
-// Called by the trusted host mod when the host runs /ranked. The mod sends the lobby
-// roster; we map each player's friend code to their registered website account so
-// match reports (keyed on discordId — see /api/ingest/match) can be attributed.
+// Called by the trusted host mod (per-host key) when the host runs /ranked. The mod sends
+// the lobby roster; we map each friend code to the registered account and return the
+// OPAQUE playerId — never the Discord id — so a leaked key can't deanonymize accounts.
+// Match reports key on that same playerId (see /api/ingest/match).
 //
-// `matched`   -> linked players, with the discordId the mod reports results under.
-// `unmatched` -> in-game ids the site doesn't recognize. The mod uses this to gate:
-//                only "Ranked is ready to start" when unmatched is empty (decision B).
+// `matched`   -> linked players, by opaque playerId.
+// `unmatched` -> in-game ids we don't recognize; the mod gates ranked until this is empty.
 //
 // PUID (account id) is auto-captured here: the player only ever types their friend
 // code; the mod supplies the PUID and we store it the first time we see it.
+const MAX_LOBBY = 30; // Among Us lobbies cap well below this; bound the request.
 const rosterSchema = z.object({
   players: z
     .array(
@@ -24,11 +25,12 @@ const rosterSchema = z.object({
         inGameName: z.string().optional(),
       })
     )
-    .min(1),
+    .min(1)
+    .max(MAX_LOBBY),
 });
 
 export async function POST(req: NextRequest) {
-  if (!bearerOk(req.headers.get("authorization"))) {
+  if (!(await authorizeIngest(req.headers.get("authorization")))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const parsed = rosterSchema.safeParse(await req.json().catch(() => null));
@@ -47,7 +49,10 @@ export async function POST(req: NextRequest) {
 
   const codes = entries.map((e) => e.friendCode);
   const players = codes.length
-    ? await prisma.player.findMany({ where: { friendCode: { in: codes } }, include: { user: true } })
+    ? await prisma.player.findMany({
+        where: { friendCode: { in: codes } },
+        select: { id: true, displayName: true, friendCode: true, puid: true },
+      })
     : [];
   const byCode = new Map(players.map((p) => [p.friendCode!, p]));
 
@@ -58,7 +63,6 @@ export async function POST(req: NextRequest) {
       return {
         inGameId: e.inGameId,
         playerId: player.id,
-        discordId: player.user.discordId,
         displayName: player.displayName,
         // Capture the PUID only if we don't already have one for this account.
         puidToCapture: e.puid && !player.puid ? e.puid : null,
@@ -79,7 +83,7 @@ export async function POST(req: NextRequest) {
   const unmatched = parsed.data.players.map((p) => p.inGameId).filter((id) => !matchedIds.has(id));
 
   return NextResponse.json({
-    matched: matched.map(({ inGameId, playerId, discordId, displayName }) => ({ inGameId, playerId, discordId, displayName })),
+    matched: matched.map(({ inGameId, playerId, displayName }) => ({ inGameId, playerId, displayName })),
     unmatched,
   });
 }

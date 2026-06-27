@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const participantSchema = z.object({
-  discordId: z.string(),
+  playerId: z.string(),
   role: z.enum(["CREW", "IMPOSTOR"]),
   won: z.boolean(),
   kills: z.number().int().min(0).default(0),
@@ -37,12 +37,12 @@ export const matchPayloadSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["endedAt"], message: "endedAt must be >= startedAt" });
     }
 
-    // Validate unique discordIds within participants
-    const ids = data.participants.map((p) => p.discordId);
+    // Validate unique playerIds within participants
+    const ids = data.participants.map((p) => p.playerId);
     const seen = new Set<string>();
     for (const id of ids) {
       if (seen.has(id)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["participants"], message: `Duplicate discordId: ${id}` });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["participants"], message: `Duplicate playerId: ${id}` });
         break;
       }
       seen.add(id);

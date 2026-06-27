@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
     const t = await createTournament({ name, slug, playerIds });
     return NextResponse.json({ id: t.id, slug: t.slug }, { status: 201 });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    // Don't leak internal/Prisma error text to the client; log it server-side.
+    console.error("createTournament failed:", e);
+    return NextResponse.json({ error: "Could not create tournament (check the slug isn't taken)." }, { status: 400 });
   }
 }

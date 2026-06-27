@@ -4,28 +4,30 @@ import { processMatch } from "./processMatch";
 import { computePerf } from "../elo/perf";
 import { updateRating } from "../elo/update";
 
-async function makePlayer(discordId: string) {
-  const user = await prisma.user.create({ data: { discordId, username: discordId } });
-  return prisma.player.create({ data: { userId: user.id, displayName: discordId, linkCode: discordId + "-c", isLinked: true } });
+async function makePlayer(name: string) {
+  const user = await prisma.user.create({ data: { discordId: name, username: name } });
+  return prisma.player.create({ data: { userId: user.id, displayName: name, linkCode: name + "-c", isLinked: true } });
 }
 
 describe("processMatch", () => {
   beforeEach(async () => {
     await prisma.matchParticipant.deleteMany();
     await prisma.match.deleteMany();
+    await prisma.playerSeason.deleteMany();
     await prisma.player.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.season.deleteMany();
   });
 
   it("updates impostor rating up on a win and writes a match", async () => {
     const imp = await makePlayer("imp1");
-    await makePlayer("crew1");
+    const crew = await makePlayer("crew1");
     const res = await processMatch({
       matchCode: "T1", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
       outcome: "IMP_WIN",
       participants: [
-        { discordId: "imp1", role: "IMPOSTOR", won: true, kills: 3, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true, timeToKillMs: 15000 },
-        { discordId: "crew1", role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
+        { playerId: imp.id, role: "IMPOSTOR", won: true, kills: 3, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true, timeToKillMs: 15000 },
+        { playerId: crew.id, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
       ],
     });
     expect(res.matchId).toBeTruthy();
@@ -36,15 +38,15 @@ describe("processMatch", () => {
 
   it("is idempotent: calling processMatch twice with the same matchCode returns the same matchId and increments games only once", async () => {
     const imp = await makePlayer("imp-idem");
-    await makePlayer("crew-idem");
+    const crew = await makePlayer("crew-idem");
     const payload = {
       matchCode: "IDEM-1",
       startedAt: new Date().toISOString(),
       endedAt: new Date().toISOString(),
       outcome: "IMP_WIN" as const,
       participants: [
-        { discordId: "imp-idem", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "crew-idem", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
+        { playerId: imp.id, role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: crew.id, role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
       ],
     };
 
@@ -67,8 +69,8 @@ describe("processMatch", () => {
       matchCode: "ROLES-1", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
       outcome: "IMP_WIN",
       participants: [
-        { discordId: "imp-roles", role: "IMPOSTOR", won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "crew-roles", role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
+        { playerId: imp.id, role: "IMPOSTOR", won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: crew.id, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
       ],
     });
     const i = await prisma.player.findUnique({ where: { id: imp.id } });
@@ -81,14 +83,14 @@ describe("processMatch", () => {
   });
 
   it("applies the placement K-factor (64) for a player's first game in a role", async () => {
-    await makePlayer("imp-k");
-    await makePlayer("crew-k");
+    const imp = await makePlayer("imp-k");
+    const crew = await makePlayer("crew-k");
     const res = await processMatch({
       matchCode: "K-1", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
       outcome: "IMP_WIN",
       participants: [
-        { discordId: "imp-k", role: "IMPOSTOR", won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "crew-k", role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
+        { playerId: imp.id, role: "IMPOSTOR", won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: crew.id, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false },
       ],
     });
     // Both players start at 1000, so the impostor's opponentAvg is 1000.

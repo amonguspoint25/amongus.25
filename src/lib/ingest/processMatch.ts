@@ -16,15 +16,14 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
   const existing = await prisma.match.findUnique({ where: { code: payload.matchCode } });
   if (existing) return { matchId: existing.id };
 
-  const discordIds = payload.participants.map((p) => p.discordId);
+  const playerIds = payload.participants.map((p) => p.playerId);
   const players = await prisma.player.findMany({
-    where: { isLinked: true, user: { discordId: { in: discordIds } } },
-    include: { user: true },
+    where: { isLinked: true, id: { in: playerIds } },
   });
-  const byDiscord = new Map(players.map((p) => [p.user.discordId, p]));
+  const byId = new Map(players.map((p) => [p.id, p]));
 
   const rows = payload.participants
-    .map((p) => ({ p, player: byDiscord.get(p.discordId) }))
+    .map((p) => ({ p, player: byId.get(p.playerId) }))
     .filter((r): r is { p: typeof r.p; player: NonNullable<typeof r.player> } => !!r.player);
 
   try {

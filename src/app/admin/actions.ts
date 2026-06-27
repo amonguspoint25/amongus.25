@@ -7,17 +7,18 @@ import { requireAdmin } from "@/lib/admin";
 
 // Bootstrap the FIRST admin. Works only while zero admins exist, then locks forever.
 // Any signed-in user can claim until someone does — the site owner claims right after
-// deploy. ponytail: a simultaneous double-claim could make two admins (count==0 read by
-// both); harmless for a bootstrap and revocable from the panel.
+// deploy. The flip is a single atomic conditional UPDATE (admins-count = 0 in the WHERE),
+// so the check-then-act window is one statement, not app-level read-then-write.
+// ponytail: under READ COMMITTED two truly-simultaneous claims could still both pass;
+// negligible for a one-time bootstrap and revocable from the panel.
 export async function claimAdminAction(): Promise<void> {
   const session = await auth();
   const discordId = (session?.user as { id?: string } | undefined)?.id;
   if (!discordId) return;
-  await prisma.$transaction(async (tx) => {
-    const adminCount = await tx.user.count({ where: { isAdmin: true } });
-    if (adminCount > 0) return; // already bootstrapped — claim is permanently closed
-    await tx.user.update({ where: { discordId }, data: { isAdmin: true } });
-  });
+  await prisma.$executeRaw`
+    UPDATE "User" SET "isAdmin" = true
+    WHERE "discordId" = ${discordId}
+      AND (SELECT COUNT(*) FROM "User" WHERE "isAdmin" = true) = 0`;
   revalidatePath("/admin");
   redirect("/admin");
 }

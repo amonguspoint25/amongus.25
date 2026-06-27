@@ -7,8 +7,8 @@ const validPayload = {
   endedAt: new Date("2025-01-01T10:30:00.000Z").toISOString(),
   outcome: "IMP_WIN" as const,
   participants: [
-    { discordId: "imp-a", role: "IMPOSTOR" as const, won: true, kills: 2, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-    { discordId: "crew-a", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: false },
+    { playerId: "imp-a", role: "IMPOSTOR" as const, won: true, kills: 2, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+    { playerId: "crew-a", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: false },
   ],
 };
 
@@ -22,8 +22,8 @@ describe("matchPayloadSchema", () => {
     const bad = {
       ...validPayload,
       participants: [
-        { discordId: "imp-b", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "crew-b", role: "CREW" as const, won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
+        { playerId: "imp-b", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: "crew-b", role: "CREW" as const, won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
       ],
     };
     const result = matchPayloadSchema.safeParse(bad);
@@ -38,8 +38,8 @@ describe("matchPayloadSchema", () => {
     const bad = {
       ...validPayload,
       participants: [
-        { discordId: "imp-c", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "crew-c", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 10, tasksTotal: 5, survived: false },
+        { playerId: "imp-c", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: "crew-c", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 10, tasksTotal: 5, survived: false },
       ],
     };
     const result = matchPayloadSchema.safeParse(bad);
@@ -50,19 +50,19 @@ describe("matchPayloadSchema", () => {
     }
   });
 
-  it("rejects payload with duplicate discordIds", () => {
+  it("rejects payload with duplicate playerIds", () => {
     const bad = {
       ...validPayload,
       participants: [
-        { discordId: "dup-id", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-        { discordId: "dup-id", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
+        { playerId: "dup-id", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: "dup-id", role: "CREW" as const, won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 2, tasksTotal: 5, survived: false },
       ],
     };
     const result = matchPayloadSchema.safeParse(bad);
     expect(result.success).toBe(false);
     if (!result.success) {
       const issues = result.error.issues.map((i) => i.message);
-      expect(issues.some((m) => m.includes("Duplicate discordId"))).toBe(true);
+      expect(issues.some((m) => m.includes("Duplicate playerId"))).toBe(true);
     }
   });
 
@@ -85,7 +85,7 @@ describe("matchPayloadSchema", () => {
       ...validPayload,
       outcome: "CREW_WIN" as const,
       participants: [
-        { discordId: "crew-x", role: "CREW" as const, won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: true },
+        { playerId: "crew-x", role: "CREW" as const, won: true, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: true },
       ],
     };
     const result = matchPayloadSchema.safeParse(bad);
@@ -100,7 +100,7 @@ describe("matchPayloadSchema", () => {
     const bad = {
       ...validPayload,
       participants: [
-        { discordId: "imp-y", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: "imp-y", role: "IMPOSTOR" as const, won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
       ],
     };
     const result = matchPayloadSchema.safeParse(bad);

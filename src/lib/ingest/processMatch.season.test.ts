@@ -24,8 +24,8 @@ it("attributes a match to the active season and seeds PlayerSeason at 1000", asy
     matchCode: `${TAG}-m1`, startedAt: new Date(Date.now() - 600000).toISOString(),
     endedAt: new Date().toISOString(), outcome: "IMP_WIN",
     participants: [
-      { discordId: a.discordId, role: "IMPOSTOR", won: true, kills: 2, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
-      { discordId: b.discordId, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: false },
+      { playerId: a.playerId, role: "IMPOSTOR", won: true, kills: 2, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+      { playerId: b.playerId, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 3, tasksTotal: 5, survived: false },
     ],
   };
   const { matchId } = await processMatch(payload);
