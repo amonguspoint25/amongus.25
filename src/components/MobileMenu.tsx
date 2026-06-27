@@ -7,6 +7,7 @@ const TABS = [
   { href: "/#rankings", label: "Rankings" },
   { href: "/#how", label: "Protocol" },
   { href: "/#tournaments", label: "Tournaments" },
+  { href: "/matches", label: "Matches" },
   { href: "/link", label: "Link" },
 ];
 
