@@ -77,6 +77,7 @@ export default async function AdminPage({
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <Link href="/admin/seasons" className="btn-ghost" style={ghost}>SEASONS</Link>
           <Link href="/admin/tournaments" className="btn-ghost" style={ghost}>TOURNAMENTS</Link>
+          <Link href="/admin/hosts" className="btn-ghost" style={ghost}>HOSTS</Link>
         </div>
       </div>
 

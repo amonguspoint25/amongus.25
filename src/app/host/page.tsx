@@ -12,7 +12,22 @@ export default async function HostPage() {
     where: { discordId },
     include: { hostKeys: { where: { revokedAt: null }, orderBy: { createdAt: "asc" } } },
   });
-  if (!user?.isHost) redirect("/");
+  if (!user?.isHost && !user?.isAdmin) redirect("/");
+
+  // An admin who isn't a host can reach this panel but has no host key to arm. Point
+  // them to flag themselves as a host (which mints a key) rather than show a dead button.
+  if (!user.isHost && user.isAdmin) {
+    return (
+      <main className="mx-auto max-w-xl p-8">
+        <h1 className="text-2xl font-bold">Ranked host panel</h1>
+        <p className="mt-2 text-sm opacity-70">
+          You&apos;re an admin. To host ranked games yourself, give your account the Host
+          role in <a className="underline" href="/admin/hosts">Admin → Hosts</a> — that mints
+          your host key. Then this panel lets you arm ranked.
+        </p>
+      </main>
+    );
+  }
 
   const now = new Date();
   const armedUntil =

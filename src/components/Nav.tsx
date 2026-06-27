@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 import { MobileMenu } from "./MobileMenu";
-import { requireAdmin } from "@/lib/admin";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
 
 const TABS = [
   { href: "/#rankings", label: "Rankings" },
@@ -11,11 +12,18 @@ const TABS = [
 ];
 
 export async function Nav() {
-  // Show the Admin tab only to admins. The first admin reaches /admin by URL once to
-  // claim (no admin exists yet); after that the tab appears for them.
-  const admin = await requireAdmin();
-  const adminTab = admin ? [{ href: "/admin", label: "Admin" }] : [];
-  const tabs = [...TABS, ...adminTab];
+  // Role tabs: Admin for admins, Host for hosts AND admins (admins are superusers).
+  // The first admin reaches /admin by URL once to claim; after that the tab appears.
+  const session = await auth();
+  const discordId = (session?.user as { id?: string } | undefined)?.id;
+  const me = discordId
+    ? await prisma.user.findUnique({ where: { discordId }, select: { isAdmin: true, isHost: true } })
+    : null;
+  const roleTabs = [
+    ...(me?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(me?.isAdmin || me?.isHost ? [{ href: "/host", label: "Host" }] : []),
+  ];
+  const tabs = [...TABS, ...roleTabs];
   return (
     <header
       className="sticky top-0 z-50"
@@ -50,7 +58,7 @@ export async function Nav() {
 
         {/* Mobile right side — hamburger (passes SignInButton as a prop) */}
         <div className="ml-auto md:hidden">
-          <MobileMenu signIn={<SignInButton />} extraTabs={adminTab} />
+          <MobileMenu signIn={<SignInButton />} extraTabs={roleTabs} />
         </div>
       </nav>
     </header>
