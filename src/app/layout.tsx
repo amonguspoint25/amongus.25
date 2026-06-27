@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
@@ -26,9 +27,21 @@ const mono = JetBrains_Mono({
   weight: ["400", "500", "700"],
 });
 
+const DESCRIPTION = "Climb the Crew & Impostor ELO ladders on the .25 ranked server.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://au-25.vercel.app"),
   title: "Among Us .25 Ranked",
-  description: "Climb the Crew & Impostor ELO ladders on the .25 ranked server.",
+  description: DESCRIPTION,
+  // OG/Twitter images come from app/opengraph-image.tsx automatically.
+  openGraph: {
+    title: "Among Us .25 Ranked",
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "Among Us .25 Ranked",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "Among Us .25 Ranked", description: DESCRIPTION },
 };
 
 export default function RootLayout({
@@ -48,6 +61,14 @@ export default function RootLayout({
         <CommandPalette />
         <Nav />
         {children}
+        <footer style={{ marginTop: "auto", borderTop: "1px solid var(--line)", padding: "1.5rem", textAlign: "center" }}>
+          <p className="eyebrow" style={{ color: "var(--muted)" }}>
+            <Link href="/privacy">Privacy</Link>
+            {" · "}
+            <Link href="/account">Account</Link>
+            {" · "}Among Us .25 Ranked
+          </p>
+        </footer>
       </body>
     </html>
   );
