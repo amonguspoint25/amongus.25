@@ -1,11 +1,7 @@
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getSessionUser } from "@/lib/sessionUser";
 
-/** Returns the admin User if the current session belongs to an admin, else null. */
+/** Returns the admin user (id/username/role flags) if the session is an admin, else null. */
 export async function requireAdmin() {
-  const session = await auth();
-  const discordId = (session?.user as { id?: string } | undefined)?.id;
-  if (!discordId) return null;
-  const user = await prisma.user.findUnique({ where: { discordId } });
+  const user = await getSessionUser();
   return user?.isAdmin ? user : null;
 }

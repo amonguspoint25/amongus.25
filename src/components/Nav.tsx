@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 import { MobileMenu } from "./MobileMenu";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getSessionUser } from "@/lib/sessionUser";
 
 const TABS = [
   { href: "/#rankings", label: "Rankings" },
@@ -14,11 +13,8 @@ const TABS = [
 export async function Nav() {
   // Role tabs: Admin for admins, Host for hosts AND admins (admins are superusers).
   // The first admin reaches /admin by URL once to claim; after that the tab appears.
-  const session = await auth();
-  const discordId = (session?.user as { id?: string } | undefined)?.id;
-  const me = discordId
-    ? await prisma.user.findUnique({ where: { discordId }, select: { isAdmin: true, isHost: true } })
-    : null;
+  // getSessionUser is request-cached, so this shares the lookup with requireAdmin().
+  const me = await getSessionUser();
   const roleTabs = [
     ...(me?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
     ...(me?.isAdmin || me?.isHost ? [{ href: "/host", label: "Host" }] : []),

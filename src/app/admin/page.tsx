@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { getSessionUser } from "@/lib/sessionUser";
 import { claimAdminAction, grantAdminAction, revokeAdminAction } from "./actions";
 
 export const metadata = { title: "Admin — Among Us .25 Ranked" };
@@ -14,11 +14,10 @@ export default async function AdminPage({
   searchParams: Promise<{ granted?: string; nouser?: string; ambiguous?: string }>;
 }) {
   const { granted, nouser, ambiguous } = await searchParams;
-  const session = await auth();
-  const discordId = (session?.user as { id?: string } | undefined)?.id;
+  const me = await getSessionUser(); // request-cached; shared with Nav
 
   // Not signed in.
-  if (!discordId) {
+  if (!me) {
     return (
       <main className="max-w-2xl mx-auto p-8">
         <p className="eyebrow mb-1">// CONTROL DECK</p>
@@ -28,11 +27,9 @@ export default async function AdminPage({
     );
   }
 
-  const me = await prisma.user.findUnique({ where: { discordId } });
-  const adminCount = await prisma.user.count({ where: { isAdmin: true } });
-
-  // Signed in but not an admin.
-  if (!me?.isAdmin) {
+  // Signed in but not an admin — only here do we need the admin count (bootstrap check).
+  if (!me.isAdmin) {
+    const adminCount = await prisma.user.count({ where: { isAdmin: true } });
     return (
       <main className="max-w-2xl mx-auto p-8">
         <p className="eyebrow mb-1">// CONTROL DECK</p>
