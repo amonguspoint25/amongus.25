@@ -57,14 +57,24 @@ export async function getOrCreatePlayerSeason(
   }
 }
 
-// Admin rollover: end the active season (if any) and open the next number, atomically.
-// Re-checks inside the transaction so a double-click is a no-op rather than a double bump.
+// Admin rollover: in one transaction, end the active season (if any) and open the
+// next number. Each call advances the season; the admin UI guards against accidental
+// double submits.
 export async function rolloverSeason(db: PrismaClient): Promise<Season> {
   return db.$transaction(async (tx) => {
     const active = await tx.season.findFirst({ where: { endedAt: null }, orderBy: { number: "desc" } });
     const now = new Date();
     if (active) await tx.season.update({ where: { id: active.id }, data: { endedAt: now } });
     const latest = active ?? (await tx.season.findFirst({ orderBy: { number: "desc" } }));
-    return tx.season.create({ data: { number: (latest?.number ?? 0) + 1, startedAt: now } });
+    const nextNumber = (latest?.number ?? 0) + 1;
+    try {
+      return await tx.season.create({ data: { number: nextNumber, startedAt: now } });
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002") {
+        const raced = await tx.season.findFirst({ where: { number: nextNumber } });
+        if (raced) return raced;
+      }
+      throw e;
+    }
   });
 }
