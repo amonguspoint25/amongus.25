@@ -4,6 +4,7 @@ import { updateRating } from "../elo/update";
 import { kForGames } from "../elo/placement";
 import type { MatchPayload } from "./schema";
 import { Prisma } from "@prisma/client";
+import { getOrCreateActiveSeason, getOrCreatePlayerSeason } from "../season/season";
 
 // NOTE: Deeper anti-cheat (HMAC-signed match assertions, nonce, timing-sanity on match
 // duration) is DEFERRED BY DESIGN to the game-server ingestion contract. The website
@@ -31,6 +32,18 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
 
   try {
     return await prisma.$transaction(async (tx) => {
+      const season = await getOrCreateActiveSeason(tx);
+
+      // Lazily materialize each player's season rating (soft-reset seeded on first use).
+      const seasonByPlayer = new Map<string, Awaited<ReturnType<typeof getOrCreatePlayerSeason>>>();
+      for (const { player } of rows) {
+        seasonByPlayer.set(player.id, await getOrCreatePlayerSeason(tx, player.id, season));
+      }
+
+      // Averages come from SEASON ratings — the competitive ladder for this match.
+      const crewAvg = avg(rows.filter((r) => r.p.role === "CREW").map((r) => seasonByPlayer.get(r.player.id)!.crewElo));
+      const impAvg = avg(rows.filter((r) => r.p.role === "IMPOSTOR").map((r) => seasonByPlayer.get(r.player.id)!.impElo));
+
       const match = await tx.match.create({
         data: {
           code: payload.matchCode,
@@ -38,16 +51,20 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
           startedAt: new Date(payload.startedAt),
           endedAt: new Date(payload.endedAt),
           outcome: payload.outcome,
+          seasonId: season.id,
         },
       });
+
       for (const { p, player } of rows) {
+        const ps = seasonByPlayer.get(player.id)!;
         const isImp = p.role === "IMPOSTOR";
-        const rating = isImp ? player.impElo : player.crewElo;
+        const rating = isImp ? ps.impElo : ps.crewElo;
         const opponentAvg = isImp ? crewAvg : impAvg;
         const perf = computePerf(p.role, p);
-        const roleGames = isImp ? player.impGames : player.crewGames;
+        const roleGames = isImp ? ps.impGames : ps.crewGames; // per-season placement
         const k = kForGames(roleGames);
         const { eloAfter, eloDelta } = updateRating({ rating, opponentAvg, won: p.won, perf, k });
+
         await tx.matchParticipant.create({
           data: {
             matchId: match.id,
@@ -67,14 +84,37 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
             eloDelta,
           },
         });
-        const newCrew = isImp ? player.crewElo : eloAfter;
-        const newImp = isImp ? eloAfter : player.impElo;
+
+        // Season rating + per-season counts (the leaderboard for this season).
+        const psCrew = isImp ? ps.crewElo : eloAfter;
+        const psImp = isImp ? eloAfter : ps.impElo;
+        await tx.playerSeason.update({
+          where: { id: ps.id },
+          data: {
+            crewElo: psCrew,
+            impElo: psImp,
+            overallElo: (psCrew + psImp) / 2,
+            kills: { increment: p.kills },
+            correctShots: { increment: p.correctShots },
+            incorrectShots: { increment: p.incorrectShots },
+            tasksDone: { increment: p.tasksDone },
+            crewWins: { increment: !isImp && p.won ? 1 : 0 },
+            impWins: { increment: isImp && p.won ? 1 : 0 },
+            games: { increment: 1 },
+            crewGames: { increment: isImp ? 0 : 1 },
+            impGames: { increment: isImp ? 1 : 0 },
+          },
+        });
+
+        // Player lifetime counters + cumulative career Elo (the all-time board).
+        const careerCrew = isImp ? player.crewElo : player.crewElo + eloDelta;
+        const careerImp = isImp ? player.impElo + eloDelta : player.impElo;
         await tx.player.update({
           where: { id: player.id },
           data: {
-            crewElo: newCrew,
-            impElo: newImp,
-            overallElo: (newCrew + newImp) / 2,
+            crewElo: careerCrew,
+            impElo: careerImp,
+            overallElo: (careerCrew + careerImp) / 2,
             kills: { increment: p.kills },
             correctShots: { increment: p.correctShots },
             incorrectShots: { increment: p.incorrectShots },
