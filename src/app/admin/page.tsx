@@ -11,9 +11,9 @@ const ghost = { fontSize: "0.72rem", letterSpacing: "0.14em", padding: "0.55rem 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ granted?: string; nouser?: string }>;
+  searchParams: Promise<{ granted?: string; nouser?: string; ambiguous?: string }>;
 }) {
-  const { granted, nouser } = await searchParams;
+  const { granted, nouser, ambiguous } = await searchParams;
   const session = await auth();
   const discordId = (session?.user as { id?: string } | undefined)?.id;
 
@@ -106,6 +106,9 @@ export default async function AdminPage({
         )}
         {nouser && (
           <p className="data" style={{ color: "var(--warn, #e0a04d)", marginTop: "0.9rem" }}>No user named “{nouser}”. They must sign in once first.</p>
+        )}
+        {ambiguous && (
+          <p className="data" style={{ color: "var(--warn, #e0a04d)", marginTop: "0.9rem" }}>More than one account is named “{ambiguous}”. Can’t safely grant by name — disambiguation by Discord ID isn’t built yet.</p>
         )}
 
         <div style={{ marginTop: "1.25rem", display: "grid", gap: "0.5rem" }}>

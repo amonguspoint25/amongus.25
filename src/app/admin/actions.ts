@@ -22,21 +22,26 @@ export async function claimAdminAction(): Promise<void> {
   redirect("/admin");
 }
 
-// Grant admin to another user by Discord username (existing admins only). Usernames are
-// not unique on Discord, so this targets the first case-insensitive match.
+// Grant admin to another user by Discord username (existing admins only). Discord
+// usernames are NOT unique, so refuse when more than one account matches — granting to
+// the wrong person is a privilege-escalation hazard. The admin must disambiguate.
 export async function grantAdminAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   if (!admin) return;
   const username = String(formData.get("username") ?? "").trim();
   if (!username) redirect("/admin");
 
-  const target = await prisma.user.findFirst({
+  const matches = await prisma.user.findMany({
     where: { username: { equals: username, mode: "insensitive" } },
+    take: 2,
+    select: { id: true },
   });
-  if (target) await prisma.user.update({ where: { id: target.id }, data: { isAdmin: true } });
+  if (matches.length === 0) redirect(`/admin?nouser=${encodeURIComponent(username)}`);
+  if (matches.length > 1) redirect(`/admin?ambiguous=${encodeURIComponent(username)}`);
 
+  await prisma.user.update({ where: { id: matches[0].id }, data: { isAdmin: true } });
   revalidatePath("/admin");
-  redirect(target ? `/admin?granted=${encodeURIComponent(username)}` : `/admin?nouser=${encodeURIComponent(username)}`);
+  redirect(`/admin?granted=${encodeURIComponent(username)}`);
 }
 
 // Revoke admin from a user (existing admins only). Never lets the last admin remove
@@ -47,11 +52,15 @@ export async function revokeAdminAction(formData: FormData): Promise<void> {
   const userId = String(formData.get("userId") ?? "");
   if (!userId) redirect("/admin");
 
-  await prisma.$transaction(async (tx) => {
-    const adminCount = await tx.user.count({ where: { isAdmin: true } });
-    if (adminCount <= 1) return; // refuse to remove the last admin
-    await tx.user.update({ where: { id: userId }, data: { isAdmin: false } });
-  });
+  // Atomic last-admin guard: a single conditional UPDATE flips isAdmin off only while
+  // more than one admin exists. No check-then-act window, so concurrent revokes of
+  // different admins can never both succeed and drain the admin list to zero. Affects
+  // 0 rows for the last admin or a bad userId (no crash).
+  await prisma.$executeRaw`
+    UPDATE "User" SET "isAdmin" = false
+    WHERE "id" = ${userId}
+      AND "isAdmin" = true
+      AND (SELECT COUNT(*) FROM "User" WHERE "isAdmin" = true) > 1`;
   revalidatePath("/admin");
   redirect("/admin");
 }
