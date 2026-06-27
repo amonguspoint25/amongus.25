@@ -12,10 +12,12 @@ const TABS = [
 
 interface MobileMenuProps {
   signIn: React.ReactNode;
+  extraTabs?: { href: string; label: string }[];
 }
 
-export function MobileMenu({ signIn }: MobileMenuProps) {
+export function MobileMenu({ signIn, extraTabs = [] }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
+  const tabs = [...TABS, ...extraTabs];
 
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
@@ -75,7 +77,7 @@ export function MobileMenu({ signIn }: MobileMenuProps) {
             animation: "mobileMenuEnter 0.25s cubic-bezier(0.16,1,0.3,1) both",
           }}
         >
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <Link
               key={t.href}
               href={t.href}

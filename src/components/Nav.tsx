@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 import { MobileMenu } from "./MobileMenu";
+import { requireAdmin } from "@/lib/admin";
 
 const TABS = [
   { href: "/#rankings", label: "Rankings" },
@@ -9,7 +10,12 @@ const TABS = [
   { href: "/link", label: "Link" },
 ];
 
-export function Nav() {
+export async function Nav() {
+  // Show the Admin tab only to admins. The first admin reaches /admin by URL once to
+  // claim (no admin exists yet); after that the tab appears for them.
+  const admin = await requireAdmin();
+  const adminTab = admin ? [{ href: "/admin", label: "Admin" }] : [];
+  const tabs = [...TABS, ...adminTab];
   return (
     <header
       className="sticky top-0 z-50"
@@ -24,7 +30,7 @@ export function Nav() {
 
         {/* Desktop tabs — hidden on mobile */}
         <div className="ml-3 hidden md:flex items-center gap-1">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <Link
               key={t.href}
               href={t.href}
@@ -44,7 +50,7 @@ export function Nav() {
 
         {/* Mobile right side — hamburger (passes SignInButton as a prop) */}
         <div className="ml-auto md:hidden">
-          <MobileMenu signIn={<SignInButton />} />
+          <MobileMenu signIn={<SignInButton />} extraTabs={adminTab} />
         </div>
       </nav>
     </header>
