@@ -22,6 +22,7 @@ model Player {
   userId         String             @unique
   displayName    String
   friendCode        String?   @unique
+  puid              String?   @unique
   linkCode          String?   @unique
   linkCodeExpiresAt DateTime?
   isLinked          Boolean   @default(false)
@@ -38,7 +39,41 @@ model Player {
   crewGames      Int                @default(0)
   impGames       Int                @default(0)
   participants   MatchParticipant[]
+  seasons        PlayerSeason[]
   createdAt      DateTime           @default(now())
+}
+
+model Season {
+  id            String         @id @default(cuid())
+  number        Int            @unique
+  startedAt     DateTime       @default(now())
+  endedAt       DateTime?
+  createdAt     DateTime       @default(now())
+  playerSeasons PlayerSeason[]
+  matches       Match[]
+}
+
+model PlayerSeason {
+  id             String   @id @default(cuid())
+  player         Player   @relation(fields: [playerId], references: [id])
+  playerId       String
+  season         Season   @relation(fields: [seasonId], references: [id])
+  seasonId       String
+  crewElo        Float    @default(1000)
+  impElo         Float    @default(1000)
+  overallElo     Float    @default(1000)
+  games          Int      @default(0)
+  crewGames      Int      @default(0)
+  impGames       Int      @default(0)
+  kills          Int      @default(0)
+  correctShots   Int      @default(0)
+  incorrectShots Int      @default(0)
+  tasksDone      Int      @default(0)
+  crewWins       Int      @default(0)
+  impWins        Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([playerId, seasonId])
 }
 
 enum Outcome {
@@ -60,6 +95,8 @@ model Match {
   outcome      Outcome
   tournament   Tournament?        @relation(fields: [tournamentId], references: [id])
   tournamentId String?
+  season       Season?            @relation(fields: [seasonId], references: [id])
+  seasonId     String?
   participants MatchParticipant[]
   createdAt    DateTime           @default(now())
 }
