@@ -11,6 +11,7 @@ public static class RankedSettings
     public const int MinLinkedPlayers = 10;
     private const float CrewVision = 0.25f;
     private const float ImpVision = 1.75f;
+    private const float KillCooldown = 22.5f;
     private const int Common = 2, Long = 3, Short = 5; // "max tasks" for this AU build
     private const int TaskBarNever = 2;                // TaskBarMode.Invisible (confirm via the log)
 
@@ -24,6 +25,7 @@ public static class RankedSettings
         {
             if (!Near(go.GetFloat(FloatOptionNames.CrewLightMod), CrewVision)) bad.Add("crew vision 0.25");
             if (!Near(go.GetFloat(FloatOptionNames.ImpostorLightMod), ImpVision)) bad.Add("imp vision 1.75");
+            if (!Near(go.GetFloat(FloatOptionNames.KillCooldown), KillCooldown)) bad.Add("kill cd 22.5");
 
             if (go.GetInt(Int32OptionNames.NumCommonTasks) != Common ||
                 go.GetInt(Int32OptionNames.NumLongTasks) != Long ||
@@ -34,6 +36,7 @@ public static class RankedSettings
 
             GameWatcherPlugin.Logger?.LogInfo(
                 $"[settings] crewV={go.GetFloat(FloatOptionNames.CrewLightMod)} impV={go.GetFloat(FloatOptionNames.ImpostorLightMod)} " +
+                $"killCd={go.GetFloat(FloatOptionNames.KillCooldown)} " +
                 $"tasks(C/L/S)={go.GetInt(Int32OptionNames.NumCommonTasks)}/{go.GetInt(Int32OptionNames.NumLongTasks)}/{go.GetInt(Int32OptionNames.NumShortTasks)} " +
                 $"taskbar={taskbar}");
         }
