@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -89,5 +91,43 @@ namespace GameWatcher.Core
         private sealed record LinkRequest(string LinkCode);
 
         private sealed record LinkResponse(bool Ok, string? PlayerId, string? DisplayName);
+
+        private const string RosterPath = "/api/lobby/roster";
+
+        // Bulk-resolve a whole lobby by friend code (spec §9 gate). Populates inGameId -> playerId
+        // for every matched player and returns the inGameIds we could NOT resolve. On any non-200
+        // (bad key, site down) or malformed body, nothing is cached and EVERY player is reported
+        // unmatched, so the caller fails safe: a lobby it can't verify is treated as "not all linked".
+        public async Task<IReadOnlyList<int>> ResolveRosterAsync(
+            IReadOnlyList<RosterPlayer> players, CancellationToken ct = default)
+        {
+            if (players == null || players.Count == 0) return System.Array.Empty<int>();
+
+            var body = GameWatcherJson.Serialize(new RosterRequest(players));
+            var resp = await _transport.SendAsync(new HttpRequestSpec(HttpMethod.Post, RosterPath, body), ct)
+                .ConfigureAwait(false);
+
+            if (resp.StatusCode != 200) return players.Select(p => p.InGameId).ToList();
+
+            RosterResponse? parsed;
+            try { parsed = GameWatcherJson.Deserialize<RosterResponse>(resp.Body); }
+            catch (JsonException) { return players.Select(p => p.InGameId).ToList(); }
+            if (parsed == null) return players.Select(p => p.InGameId).ToList();
+
+            foreach (var m in parsed.Matched ?? new System.Collections.Generic.List<RosterMatch>())
+                if (!string.IsNullOrEmpty(m.PlayerId))
+                    _byInGameId[m.InGameId.ToString(CultureInfo.InvariantCulture)] = m.PlayerId!;
+
+            return parsed.Unmatched ?? new System.Collections.Generic.List<int>();
+        }
+
+        private sealed record RosterRequest(IReadOnlyList<RosterPlayer> Players);
+        private sealed record RosterMatch(int InGameId, string? PlayerId, string? DisplayName);
+        private sealed record RosterResponse(
+            IReadOnlyList<RosterMatch>? Matched,
+            IReadOnlyList<int>? Unmatched);
     }
+
+    // Lobby roster row the host reads from the game and sends to /api/lobby/roster (spec §9).
+    public sealed record RosterPlayer(int InGameId, string FriendCode, string? Puid = null, string? InGameName = null);
 }
