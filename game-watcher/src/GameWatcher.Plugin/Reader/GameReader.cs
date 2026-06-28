@@ -1,0 +1,138 @@
+using System;
+using System.Collections.Generic;
+using GameWatcher.Core.Domain;
+using HarmonyLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+
+namespace GameWatcher.Plugin;
+
+// Real game reader: Harmony hooks translate live Among Us events into Core event records, enqueued to
+// BrainHost for recording. Also drives the ranked timer lifecycle. All reads are main-thread; only
+// plain records cross to the background worker (never Il2Cpp objects).
+public static class GameReader
+{
+    private static DateTimeOffset _start;
+    private static bool _recording;
+    private static string _code;
+
+    private static long AtMs() => (long)(DateTimeOffset.UtcNow - _start).TotalMilliseconds;
+    private static bool Active => GameWatcherPlugin.Host != null && GameWatcherPlugin.Host.RankedActive;
+    private static void Emit(GameEvent e) => GameWatcherPlugin.Host?.Enqueue(e);
+
+    // GAME START: roster + roles + per-crew task counts. IntroCutscene.OnDestroy fires once the
+    // role-reveal ends, by which point roles are assigned and players are spawned.
+    [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.OnDestroy))]
+    public static class Start
+    {
+        public static void Postfix()
+        {
+            _recording = Active;
+            if (!_recording) return;
+            _start = DateTimeOffset.UtcNow;
+            _code = MatchCode();
+
+            var all = PlayerControl.AllPlayerControls;
+            var roster = new List<RosterEntry>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                var pc = all[i];
+                if (pc == null || pc.Data == null) continue;
+                bool imp = pc.Data.Role != null && pc.Data.Role.IsImpostor;
+                roster.Add(new RosterEntry(pc.PlayerId.ToString(), pc.Data.PlayerName, imp ? Role.IMPOSTOR : Role.CREW));
+            }
+            Emit(new GameStarted(_code, "Among Us", _start, roster));
+            for (int i = 0; i < all.Count; i++)
+            {
+                var pc = all[i];
+                if (pc == null || pc.Data == null || pc.Data.Role == null || pc.Data.Role.IsImpostor) continue;
+                int tasks = pc.Data.Tasks != null ? pc.Data.Tasks.Count : 0;
+                Emit(new TasksAssigned(pc.PlayerId.ToString(), tasks));
+            }
+            RankedTimerController.OnGameStart();
+            GameWatcherPlugin.Logger?.LogInfo($"[reader] start {_code}: {roster.Count} players");
+        }
+    }
+
+    // KILL: __instance is the killer, target is the victim.
+    [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
+    public static class Kill
+    {
+        public static void Postfix(PlayerControl __instance, PlayerControl target)
+        {
+            if (!_recording || __instance == null || target == null) return;
+            Emit(new PlayerKilled(__instance.PlayerId.ToString(), target.PlayerId.ToString(), AtMs()));
+        }
+    }
+
+    // MEETING START: pause the task timer.
+    [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Start))]
+    public static class MeetingStart
+    {
+        public static void Postfix() { if (_recording) RankedTimerController.OnMeetingStart(); }
+    }
+
+    // MEETING END: who was ejected + every real vote; resume the timer.
+    [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.VotingComplete))]
+    public static class MeetingEnd
+    {
+        public static void Postfix(Il2CppStructArray<MeetingHud.VoterState> states, NetworkedPlayerInfo exiled, bool tie)
+        {
+            if (!_recording) return;
+            string ejected = exiled != null ? exiled.PlayerId.ToString() : null;
+            var votes = new List<VoteCast>();
+            if (states != null)
+                for (int i = 0; i < states.Length; i++)
+                {
+                    int votedFor = states[i].VotedForId;         // special values (253 skip, 254 none) are >= 250
+                    if (votedFor >= 0 && votedFor < 250 && PlayerById((byte)votedFor) != null)
+                        votes.Add(new VoteCast(states[i].VoterId.ToString(), votedFor.ToString()));
+                }
+            Emit(new MeetingEnded(ejected, votes));
+            RankedTimerController.OnMeetingEnd();
+            GameWatcherPlugin.Logger?.LogInfo($"[reader] meeting: ejected={ejected ?? "none"} votes={votes.Count}");
+        }
+    }
+
+    // GAME END: synthesize per-player task completions from the final task state, then the outcome.
+    [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnGameEnd))]
+    public static class End
+    {
+        public static void Postfix(EndGameResult endGameResult)
+        {
+            RankedTimerController.OnGameEnd();
+            if (!_recording) return;
+            _recording = false;
+
+            var all = PlayerControl.AllPlayerControls;
+            for (int i = 0; i < all.Count; i++)
+            {
+                var pc = all[i];
+                if (pc == null || pc.Data == null || pc.Data.Tasks == null) continue;
+                var tasks = pc.Data.Tasks;
+                for (int t = 0; t < tasks.Count; t++)
+                    if (tasks[t] != null && tasks[t].Complete)
+                        Emit(new TaskCompleted(pc.PlayerId.ToString(), AtMs()));
+            }
+
+            var reason = endGameResult != null ? endGameResult.GameOverReason : default;
+            bool crewWin = reason.ToString().StartsWith("Humans"); // Humans* = crew win, Impostor* = imp win
+            Emit(new GameEnded(crewWin ? Outcome.CREW_WIN : Outcome.IMP_WIN, DateTimeOffset.UtcNow));
+            GameWatcherPlugin.Logger?.LogInfo($"[reader] end {_code}: reason={reason} -> {(crewWin ? "CREW" : "IMP")}");
+        }
+    }
+
+    private static PlayerControl PlayerById(byte id)
+    {
+        var all = PlayerControl.AllPlayerControls;
+        for (int i = 0; i < all.Count; i++)
+            if (all[i] != null && all[i].PlayerId == id) return all[i];
+        return null;
+    }
+
+    private static string MatchCode()
+    {
+        int g = 0;
+        try { g = AmongUsClient.Instance.GameId; } catch { }
+        return "AU-" + g + "-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+}
