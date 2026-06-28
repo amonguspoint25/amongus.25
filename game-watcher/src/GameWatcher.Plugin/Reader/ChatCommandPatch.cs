@@ -3,10 +3,10 @@ using HarmonyLib;
 
 namespace GameWatcher.Plugin;
 
-// Host-only /ranked command. Among Us is host-authoritative, so the host's client sees every chat
-// line via ChatController.AddChat; we only act on the LOCAL player (the host) to prevent other
-// players from toggling ranked. The reply goes out via RpcSendChat so the whole (unmodded) lobby
-// sees the state. Replies never start with "/ranked", so they can't re-trigger this handler.
+// Host-only /ranked command. Replies via RpcSendChat so the lobby sees the state.
+// CRITICAL: Among Us's official servers KICK any client that sends a chat message longer than the
+// ~100-char input limit (a vanilla client can't, so over-length reads as cheating). Every reply
+// here MUST stay short — keep them well under that limit.
 [HarmonyPatch(typeof(ChatController), nameof(ChatController.AddChat))]
 public static class ChatCommandPatch
 {
@@ -23,11 +23,11 @@ public static class ChatCommandPatch
         {
             case "on":
                 RankedState.Enabled = true;
-                Announce("Ranked is now ON for this lobby. Everyone must be linked on the website. " + SiteLine());
+                Announce("Ranked: ON");
                 break;
             case "off":
                 RankedState.Enabled = false;
-                Announce("Ranked is now OFF.");
+                Announce("Ranked: OFF");
                 break;
             default: // bare "/ranked" or "/ranked status"
                 Announce(StatusLine());
@@ -35,19 +35,19 @@ public static class ChatCommandPatch
         }
     }
 
-    private static string StatusLine() => $"Ranked: {(RankedState.Enabled ? "ON" : "OFF")}  |  {SiteLine()}";
+    // Must stay short (see class note) — no long URLs/paths in chat.
+    private static string StatusLine() => $"Ranked: {(RankedState.Enabled ? "ON" : "OFF")} - {SiteLine()}";
 
-    // Live host-key validity from the background poll (read-only, no marshaling).
     private static string SiteLine()
     {
         var host = GameWatcherPlugin.Host;
-        if (host == null || !host.HasKey) return "no host key set (BepInEx/config/com.amongus25.gamewatcher.cfg)";
-        if (!host.PolledOnce) return "checking site…";
+        if (host == null || !host.HasKey) return "no key set";
+        if (!host.PolledOnce) return "checking";
         return host.LastStatus switch
         {
-            RankedStatus.Enabled => "host key valid - ready to record",
-            RankedStatus.Disabled => "host key INVALID or revoked",
-            _ => "site unreachable (check WebsiteBaseUrl)",
+            RankedStatus.Enabled => "key valid",
+            RankedStatus.Disabled => "key invalid",
+            _ => "site down",
         };
     }
 

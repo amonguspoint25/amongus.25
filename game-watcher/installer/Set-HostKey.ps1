@@ -41,8 +41,16 @@ Write-Host ''
 if ($code -eq 200) {
     $new = $lines -replace '^\s*HostKey\s*=.*', "HostKey = $key"
     [System.IO.File]::WriteAllLines($cfg, $new, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host 'APPROVED - host key is valid and saved.' -ForegroundColor Green
-    Write-Host 'Relaunch Among Us; /ranked status will show "ready to record".'
+    # Verify it actually persisted by reading the file back.
+    $saved = ((Get-Content -LiteralPath $cfg | Where-Object { $_ -match '^\s*HostKey\s*=' }) -replace '^\s*HostKey\s*=\s*', '').Trim()
+    if ($saved -eq $key) {
+        Write-Host 'APPROVED - host key valid and SAVED (verified).' -ForegroundColor Green
+        Write-Host '(Re)launch Among Us; /ranked status will show "key valid".'
+    } else {
+        Write-Host 'Key is VALID, but writing it to the config did not stick.' -ForegroundColor Yellow
+        Write-Host 'Close Among Us, run this again -- or paste the key into the HostKey = line in:'
+        Write-Host "  $cfg"
+    }
 } elseif ($code -eq 401) {
     Write-Host 'REJECTED (401) - that key is wrong or revoked. Nothing saved.' -ForegroundColor Red
 } elseif ($code -eq -1) {
