@@ -11,6 +11,7 @@ public sealed class PluginConfig
     public ConfigEntry<bool> RankedEnabled { get; }
     public ConfigEntry<int> TimerMinutes { get; }
     public ConfigEntry<int> MinLinkedPlayers { get; }
+    public ConfigEntry<string>[] OutfitSlots { get; }
 
     public PluginConfig(ConfigFile config)
     {
@@ -24,5 +25,10 @@ public sealed class PluginConfig
             "Ranked task-deadline timer length, in minutes. Lower (e.g. 1) to test the force-end.");
         MinLinkedPlayers = config.Bind("GameWatcher", "MinLinkedPlayers", 10,
             "Minimum linked players required to start a ranked game. Lower (e.g. 2) to test with a few friends.");
+
+        OutfitSlots = new ConfigEntry<string>[OutfitPresets.SlotCount];
+        for (int i = 0; i < OutfitSlots.Length; i++)
+            OutfitSlots[i] = config.Bind("Outfits", $"Slot{i + 1}", "",
+                $"Saved outfit preset {i + 1} (color|hat|skin|visor|pet|nameplate). Managed by the in-lobby outfit menu.");
     }
 }

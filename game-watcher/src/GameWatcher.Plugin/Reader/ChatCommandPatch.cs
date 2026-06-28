@@ -16,7 +16,10 @@ public static class ChatCommandPatch
         if (local == null || sourcePlayer == null || sourcePlayer.PlayerId != local.PlayerId) return;
 
         var text = (chatText ?? string.Empty).Trim();
-        if (!text.ToLowerInvariant().StartsWith("/ranked")) return;
+        var lower = text.ToLowerInvariant();
+
+        if (lower.StartsWith("/outfit")) { HandleOutfit(lower); return; }
+        if (!lower.StartsWith("/ranked")) return;
 
         var arg = text.Length > 7 ? text.Substring(7).Trim().ToLowerInvariant() : string.Empty;
         switch (arg)
@@ -33,6 +36,29 @@ public static class ChatCommandPatch
                 Announce(StatusLine());
                 break;
         }
+    }
+
+    // Outfit presets (also driven by the in-lobby menu): "/outfit 3" wears slot 3, "/outfit save 3"
+    // saves the current look into slot 3.
+    private static void HandleOutfit(string lower)
+    {
+        var arg = lower.Length > 7 ? lower.Substring(7).Trim() : string.Empty;
+        if (arg.StartsWith("save"))
+        {
+            var rest = arg.Substring(4).Trim();
+            if (int.TryParse(rest, out var sn) && sn >= 1 && sn <= OutfitPresets.SlotCount)
+                Announce(OutfitPresets.SaveCurrent(sn - 1) ? $"Outfit saved to slot {sn}" : "Outfit save failed");
+            else
+                Announce($"Usage: /outfit save 1-{OutfitPresets.SlotCount}");
+            return;
+        }
+        if (int.TryParse(arg, out var n) && n >= 1 && n <= OutfitPresets.SlotCount)
+        {
+            if (!OutfitPresets.IsSet(n - 1)) Announce($"Slot {n} empty - /outfit save {n}");
+            else Announce(OutfitPresets.Apply(n - 1) ? $"Wearing outfit slot {n}" : "Outfit apply failed");
+            return;
+        }
+        Announce($"/outfit 1-{OutfitPresets.SlotCount} to wear, /outfit save N to save");
     }
 
     // Must stay short (see class note) — no long URLs/paths in chat.

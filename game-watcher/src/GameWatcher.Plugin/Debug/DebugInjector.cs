@@ -17,6 +17,7 @@ public static class DebugInjector
     public static void Postfix()
     {
         RankedTimerController.Tick(); // pump the task timer every frame (no-op when not in a ranked game)
+        OutfitMenu.Update();          // render + handle the in-lobby outfit menu (no-op outside the lobby)
 
         var host = GameWatcherPlugin.Host;
         if (host == null) return;
