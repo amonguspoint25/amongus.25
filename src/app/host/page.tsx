@@ -43,10 +43,51 @@ export default async function HostPage() {
       </p>
 
       <div className="hud-panel hud-corners" style={panel}>
-        <p className="eyebrow mb-2">Ranked mod</p>
-        <p className="data" style={{ color: "var(--muted)" }}>
-          Coming soon — the host mod isn&apos;t released yet. When it is, it&apos;ll download here
-          (hosts only).
+        <p className="eyebrow mb-2">Ranked mod · v0.1.0</p>
+        <p className="data" style={{ color: "var(--muted)", marginBottom: "0.9rem" }}>
+          Host-only. Extract into your Among Us folder, launch once, paste your host key, then type{" "}
+          <code style={code}>/ranked on</code> in a lobby you host.
+        </p>
+        <a
+          href="/downloads/GameWatcherRanked.zip"
+          download
+          style={{
+            display: "inline-block",
+            background: "var(--signal)",
+            color: "#070707",
+            padding: "0.6rem 1.25rem",
+            borderRadius: "0.4rem",
+            fontWeight: 800,
+            letterSpacing: "0.02em",
+            textDecoration: "none",
+          }}
+        >
+          ↓ Download mod (.zip · 2.7 MB)
+        </a>
+        <ol
+          style={{
+            color: "var(--muted)",
+            fontSize: "0.82rem",
+            margin: "1rem 0 0",
+            paddingLeft: "1.2rem",
+            display: "grid",
+            gap: "0.35rem",
+          }}
+        >
+          <li>
+            Close Among Us, then extract the zip into the folder containing{" "}
+            <code style={code}>Among Us.exe</code>.
+          </li>
+          <li>Launch once and wait ~30s at the menu — the first launch builds interface files (one-time).</li>
+          <li>
+            Run <code style={code}>Set Host Key.bat</code> and paste your key (shown below).
+          </li>
+          <li>
+            Host a lobby → <code style={code}>/ranked on</code>.
+          </li>
+        </ol>
+        <p className="data" style={{ color: "var(--muted)", fontSize: "0.74rem", marginTop: "0.85rem" }}>
+          Only the lobby host needs the mod. Requires the ranked Among Us build everyone plays on.
         </p>
       </div>
 
