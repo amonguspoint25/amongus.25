@@ -63,6 +63,19 @@ public static class OutfitPresets
         return true;
     }
 
+    // Strip every cosmetic (the always-blank "preset 0").
+    public static void ApplyClear()
+    {
+        var lp = PlayerControl.LocalPlayer;
+        if (lp == null) return;
+        lp.RpcSetHat("");
+        lp.RpcSetSkin("");
+        lp.RpcSetVisor("");
+        lp.RpcSetPet("");
+        lp.RpcSetNamePlate("");
+        GameWatcherPlugin.Logger?.LogInfo("[outfit] cleared (preset 0)");
+    }
+
     public static OutfitData? Capture()
     {
         var outfit = PlayerControl.LocalPlayer?.Data?.DefaultOutfit;
