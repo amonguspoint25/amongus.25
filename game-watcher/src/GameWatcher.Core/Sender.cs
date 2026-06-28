@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,14 @@ namespace GameWatcher.Core
         Unauthorized,       // 401 — host key bad/revoked
     }
 
-    public sealed record SendResult(SendStatus Status, int HttpStatus, string? Detail = null);
+    public sealed record SendResult(SendStatus Status, int HttpStatus, string? Detail = null, IReadOnlyList<EloDelta>? Deltas = null);
+
+    // One player's rating change, surfaced to the host's chat after a recorded match.
+    public sealed record EloDelta(string Name, double Value);
+
+    // Shape of the 200 ingest response we read (matchId + per-player results).
+    internal sealed record IngestResponse(List<IngestPlayerResult>? Results);
+    internal sealed record IngestPlayerResult(string? Name, double EloDelta);
 
     public sealed record DrainResult(int Sent, int Dropped, bool StoppedUnauthorized, int Remaining);
 
@@ -104,11 +112,27 @@ namespace GameWatcher.Core
 
             return resp.StatusCode switch
             {
-                200 => new SendResult(SendStatus.Sent, 200),
+                200 => new SendResult(SendStatus.Sent, 200, Deltas: ParseDeltas(resp.Body)),
                 400 => new SendResult(SendStatus.RejectedPermanent, 400, resp.Body),
                 401 => new SendResult(SendStatus.Unauthorized, 401, resp.Body),
                 _ => new SendResult(SendStatus.Queued, resp.StatusCode, resp.Body), // 0/5xx/429/unknown => transient
             };
+        }
+
+        // Pull the per-player ELO deltas out of the 200 body for the host's post-match chat. Best-effort:
+        // any parse hiccup just means no delta lines (the match still recorded fine).
+        private static IReadOnlyList<EloDelta>? ParseDeltas(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return null;
+            try
+            {
+                var resp = GameWatcherJson.Deserialize<IngestResponse>(body);
+                if (resp?.Results == null || resp.Results.Count == 0) return null;
+                var list = new List<EloDelta>(resp.Results.Count);
+                foreach (var r in resp.Results) list.Add(new EloDelta(r.Name ?? "?", r.EloDelta));
+                return list;
+            }
+            catch { return null; }
         }
     }
 }

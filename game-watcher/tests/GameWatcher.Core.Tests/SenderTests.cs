@@ -25,6 +25,22 @@ namespace GameWatcher.Core.Tests
             Assert.Equal(0, q.Count);
         }
 
+        [Fact]
+        public async Task Parses_elo_deltas_from_200_body()
+        {
+            var body = "{\"matchId\":\"m\",\"results\":[" +
+                       "{\"playerId\":\"p1\",\"name\":\"Alice\",\"role\":\"IMPOSTOR\",\"eloDelta\":15}," +
+                       "{\"playerId\":\"p2\",\"name\":\"Bob\",\"role\":\"CREW\",\"eloDelta\":-8}]}";
+            var r = await new Sender(FakeTransport.Always(200, body), new InMemoryMatchQueue()).SendAsync(Payload());
+
+            Assert.Equal(SendStatus.Sent, r.Status);
+            Assert.NotNull(r.Deltas);
+            Assert.Equal(2, r.Deltas!.Count);
+            Assert.Equal("Alice", r.Deltas[0].Name);
+            Assert.Equal(15, r.Deltas[0].Value);
+            Assert.Equal(-8, r.Deltas[1].Value);
+        }
+
         [Theory]
         [InlineData(500)]
         [InlineData(429)]

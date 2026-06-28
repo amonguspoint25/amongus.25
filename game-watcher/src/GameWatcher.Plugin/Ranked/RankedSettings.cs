@@ -27,6 +27,7 @@ public static class RankedSettings
         var go = GameOptionsManager.Instance?.CurrentGameOptions;
         if (go != null)
         {
+            Req(go.GameMode == GameModes.Normal, "classic mode"); // not Hide n Seek (outcome mapping assumes classic)
             Req(Near(go.GetFloat(FloatOptionNames.CrewLightMod), CrewVision), "crew vis .25");
             Req(Near(go.GetFloat(FloatOptionNames.ImpostorLightMod), ImpVision), "imp vis 1.75");
             Req(Near(go.GetFloat(FloatOptionNames.KillCooldown), KillCooldown), "kill cd 22.5");

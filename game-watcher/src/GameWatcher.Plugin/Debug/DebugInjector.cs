@@ -13,6 +13,7 @@ namespace GameWatcher.Plugin;
 public static class DebugInjector
 {
     private static int _counter;
+    private static float _nextChat;
 
     public static void Postfix()
     {
@@ -21,9 +22,12 @@ public static class DebugInjector
         var host = GameWatcherPlugin.Host;
         if (host == null) return;
 
-        // Announce a match send result (from the injector or, later, a real game) — runs every frame, once.
-        var result = host.TakePendingResult();
-        if (result != null) Chat(result);
+        // Drain post-match chat lines (recorded + ELO deltas) at most one per 1.2s — AU kicks chat spam.
+        if (Time.realtimeSinceStartup >= _nextChat)
+        {
+            var line = host.TakeChatLine();
+            if (line != null) { Chat(line); _nextChat = Time.realtimeSinceStartup + 1.2f; }
+        }
 
         if (!Input.GetKeyDown(KeyCode.F9)) return;
         if (!host.RankedActive) { Chat("F9: ranked not active (/ranked on + valid key)"); return; }

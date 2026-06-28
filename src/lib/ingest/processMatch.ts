@@ -13,6 +13,7 @@ import { getOrCreateActiveSeason, getOrCreatePlayerSeason } from "../season/seas
 
 export type MatchResult = {
   playerId: string;
+  name: string;
   role: "CREW" | "IMPOSTOR";
   eloBefore: number;
   eloAfter: number;
@@ -89,7 +90,7 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
               eloDelta: 0,
             },
           });
-          results.push({ playerId: player.id, role: p.role, eloBefore: rating, eloAfter: rating, eloDelta: 0 });
+          results.push({ playerId: player.id, name: player.displayName, role: p.role, eloBefore: rating, eloAfter: rating, eloDelta: 0 });
           continue;
         }
 
@@ -120,7 +121,7 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
           },
         });
 
-        results.push({ playerId: player.id, role: p.role, eloBefore: rating, eloAfter, eloDelta });
+        results.push({ playerId: player.id, name: player.displayName, role: p.role, eloBefore: rating, eloAfter, eloDelta });
 
         // Season rating + per-season counts (the leaderboard for this season).
         const psCrew = isImp ? ps.crewElo : eloAfter;

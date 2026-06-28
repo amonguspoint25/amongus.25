@@ -33,7 +33,7 @@ public sealed class BrainHost
 
     private readonly string _linkUrl;
     private volatile string _pendingAnnounce;  // "not linked" notice
-    private volatile string _pendingResult;     // match send result
+    private readonly ConcurrentQueue<string> _pendingChat = new();  // batched post-match chat lines
     private string _lastAnnouncedBlocked = " ";
 
     public bool HasKey { get; }
@@ -72,7 +72,8 @@ public sealed class BrainHost
 
     // Drained by the main thread each frame -> RpcSendChat (chat must be sent main-thread).
     public string TakePendingAnnounce() => Interlocked.Exchange(ref _pendingAnnounce, null);
-    public string TakePendingResult() => Interlocked.Exchange(ref _pendingResult, null);
+    // One queued chat line per call (the caller throttles the cadence to avoid AU's chat-spam kick).
+    public string TakeChatLine() => _pendingChat.TryDequeue(out var s) ? s : null;
 
     private async Task PollLoopAsync()
     {
@@ -107,19 +108,45 @@ public sealed class BrainHost
         if (o.Kind == SessionResultKind.Sent)
         {
             var st = o.Send != null ? o.Send.Status : SendStatus.Queued;
-            _pendingResult =
-                st == SendStatus.Sent ? "Match recorded on the leaderboard!" :
-                st == SendStatus.Queued ? "Match queued (site down) - will retry" :
-                st == SendStatus.Unauthorized ? "Match failed - host key invalid" :
-                "Match rejected by the server";
+            if (st == SendStatus.Sent)
+            {
+                var lines = PackDeltas(o.Send?.Deltas);
+                _pendingChat.Enqueue(lines.Count > 0 ? "Match recorded! ELO:" : "Match recorded on the leaderboard!");
+                foreach (var line in lines) _pendingChat.Enqueue(line);
+            }
+            else
+            {
+                _pendingChat.Enqueue(
+                    st == SendStatus.Queued ? "Match queued (site down) - will retry" :
+                    st == SendStatus.Unauthorized ? "Match failed - host key invalid" :
+                    "Match rejected by the server");
+            }
         }
         else if (o.Kind == SessionResultKind.Refused)
         {
-            _pendingResult = Trunc("Match NOT sent: " + (o.Warning ?? "refused"), 95);
+            _pendingChat.Enqueue(Trunc("Match NOT sent: " + (o.Warning ?? "refused"), 95));
         }
         if (o.Kind != SessionResultKind.None)
             GameWatcherPlugin.Logger?.LogInfo("[match] outcome=" + o.Kind + (o.Warning != null ? " warning=" + o.Warning : ""));
     }
+
+    // Pack per-player deltas into <=90-char chat lines, e.g. "Alice +15  Bob -12  Carol +8".
+    private static List<string> PackDeltas(IReadOnlyList<EloDelta> deltas)
+    {
+        var lines = new List<string>();
+        if (deltas == null || deltas.Count == 0) return lines;
+        var cur = "";
+        foreach (var d in deltas)
+        {
+            var part = $"{Short(d.Name, 10)} {(d.Value >= 0 ? "+" : "")}{(int)Math.Round(d.Value)}";
+            if (cur.Length > 0 && cur.Length + part.Length + 2 > 90) { lines.Add(cur); cur = ""; }
+            cur = cur.Length == 0 ? part : cur + "  " + part;
+        }
+        if (cur.Length > 0) lines.Add(cur);
+        return lines;
+    }
+
+    private static string Short(string s, int n) => string.IsNullOrEmpty(s) ? "?" : (s.Length <= n ? s : s.Substring(0, n));
 
     // Resolve a lobby roster against /api/lobby/roster on a background thread, caching a verdict for
     // the start gate + raising a one-time chat notice (with the /link URL) when the unlinked set changes.

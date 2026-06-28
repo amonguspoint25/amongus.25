@@ -20,6 +20,19 @@ public static class GameReader
     private static bool Active => GameWatcherPlugin.Host != null && GameWatcherPlugin.Host.RankedActive;
     private static void Emit(GameEvent e) => GameWatcherPlugin.Host?.Enqueue(e);
 
+    // Entering a lobby resets stale state from a game that ended without a clean finish (host left,
+    // disbanded mid-round) so a half-recorded game can't leak into the next one or leave the timer running.
+    [HarmonyPatch(typeof(LobbyBehaviour), nameof(LobbyBehaviour.Start))]
+    public static class LobbyReset
+    {
+        public static void Postfix()
+        {
+            if (_recording) GameWatcherPlugin.Logger?.LogInfo("[reader] back in lobby - reset stale game state");
+            _recording = false;
+            RankedTimerController.OnGameEnd();
+        }
+    }
+
     // GAME START: roster + roles + per-crew task counts. IntroCutscene.OnDestroy fires once the
     // role-reveal ends, by which point roles are assigned and players are spawned.
     [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.OnDestroy))]
