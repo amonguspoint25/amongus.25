@@ -11,6 +11,8 @@ public static class RankedSettings
     public const int MinLinkedPlayers = 10;
     private const float CrewVision = 0.25f;
     private const float ImpVision = 1.75f;
+    private const int Common = 2, Long = 3, Short = 5; // "max tasks" for this AU build
+    private const int TaskBarNever = 2;                // TaskBarMode.Invisible (confirm via the log)
 
     public static string Check(int linkedCount)
     {
@@ -23,17 +25,17 @@ public static class RankedSettings
             if (!Near(go.GetFloat(FloatOptionNames.CrewLightMod), CrewVision)) bad.Add("crew vision 0.25");
             if (!Near(go.GetFloat(FloatOptionNames.ImpostorLightMod), ImpVision)) bad.Add("imp vision 1.75");
 
-            bool anyRole = false;
-            foreach (var r in new[] { RoleTypes.Engineer, RoleTypes.Scientist, RoleTypes.GuardianAngel,
-                                      RoleTypes.Shapeshifter, RoleTypes.Noisemaker, RoleTypes.Phantom, RoleTypes.Tracker })
-                if (go.RoleOptions.GetChancePerGame(r) > 0 || go.RoleOptions.GetNumPerGame(r) > 0) { anyRole = true; break; }
-            if (anyRole) bad.Add("roles off");
+            if (go.GetInt(Int32OptionNames.NumCommonTasks) != Common ||
+                go.GetInt(Int32OptionNames.NumLongTasks) != Long ||
+                go.GetInt(Int32OptionNames.NumShortTasks) != Short) bad.Add("max tasks (2/3/5)");
 
-            // Log task counts so "max tasks" + "task bar Never" can be locked to this version's real
-            // values next (those accessors differ across AU builds).
+            int taskbar = go.GetInt(Int32OptionNames.TaskBarMode);
+            if (taskbar != TaskBarNever) bad.Add("task bar Never");
+
             GameWatcherPlugin.Logger?.LogInfo(
                 $"[settings] crewV={go.GetFloat(FloatOptionNames.CrewLightMod)} impV={go.GetFloat(FloatOptionNames.ImpostorLightMod)} " +
-                $"tasks(C/L/S)={go.GetInt(Int32OptionNames.NumCommonTasks)}/{go.GetInt(Int32OptionNames.NumLongTasks)}/{go.GetInt(Int32OptionNames.NumShortTasks)}");
+                $"tasks(C/L/S)={go.GetInt(Int32OptionNames.NumCommonTasks)}/{go.GetInt(Int32OptionNames.NumLongTasks)}/{go.GetInt(Int32OptionNames.NumShortTasks)} " +
+                $"taskbar={taskbar}");
         }
 
         return bad.Count == 0 ? null : string.Join(", ", bad);
