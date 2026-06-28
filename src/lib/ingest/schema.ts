@@ -14,8 +14,9 @@ export const participantSchema = z.object({
   survived: z.boolean().default(true),
   roundsSurvived: z.number().int().min(0).optional(),
   // Player disconnected before the game ended: still recorded, but their ELO is nullified
-  // (no gain/loss) and they don't affect anyone else's rating change.
-  disconnected: z.boolean().default(false),
+  // (no gain/loss) and they don't affect anyone else's rating change. Optional (not .default) so
+  // it stays optional in the inferred type; processMatch treats undefined as false.
+  disconnected: z.boolean().optional(),
 });
 
 export const matchPayloadSchema = z
