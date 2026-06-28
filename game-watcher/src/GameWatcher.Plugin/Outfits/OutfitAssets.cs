@@ -1,44 +1,43 @@
 using System;
-using System.IO;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
 namespace GameWatcher.Plugin;
 
-// Loads the embedded outfit-slot PNGs into Unity sprites (once, lazily). The PNGs are stored as
-// EmbeddedResource (LogicalName == file name) so the DLL is self-contained. Sprites are created at
-// 1 world unit (pixelsPerUnit = texture width) so a ~0.8 transform scale gives a button-sized frame.
+// Procedural box-outline sprite for the outfit slots — no external/Higgsfield assets. A transparent
+// square with a solid white border ring; the SpriteRenderer tints it per state (gold = selected,
+// white = saved, dim = empty). Created once, at 1 world unit (pixelsPerUnit = size).
 public static class OutfitAssets
 {
-    private static Sprite _normal, _active;
+    private static Sprite _outline;
 
-    public static Sprite Normal => _normal != null ? _normal : (_normal = Load("outfit_slot.png"));
-    public static Sprite Active => _active != null ? _active : (_active = Load("outfit_slot_active.png"));
+    public static Sprite Outline => _outline != null ? _outline : (_outline = BuildOutline());
 
-    private static Sprite Load(string name)
+    private static Sprite BuildOutline()
     {
         try
         {
-            var asm = typeof(OutfitAssets).Assembly;
-            using var s = asm.GetManifestResourceStream(name);
-            if (s == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] asset missing: " + name); return null; }
-            using var ms = new MemoryStream();
-            s.CopyTo(ms);
-            var bytes = ms.ToArray();
-
-            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+            const int size = 128, border = 10;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp,
             };
-            ImageConversion.LoadImage(tex, (Il2CppStructArray<byte>)bytes);
-            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width);
-            GameWatcherPlugin.Logger?.LogInfo($"[outfit] loaded {name} {tex.width}x{tex.height}");
-            return sprite;
+            var px = new Color32[size * size];
+            var clear = new Color32(0, 0, 0, 0);
+            var line = new Color32(255, 255, 255, 255);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                    px[y * size + x] = (x < border || x >= size - border || y < border || y >= size - border) ? line : clear;
+
+            tex.SetPixels32((Il2CppStructArray<Color32>)px);
+            tex.Apply(false);
+            GameWatcherPlugin.Logger?.LogInfo("[outfit] outline texture built");
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
         catch (Exception e)
         {
-            GameWatcherPlugin.Logger?.LogWarning($"[outfit] asset load failed ({name}): {e.Message}");
+            GameWatcherPlugin.Logger?.LogWarning("[outfit] outline build failed: " + e.Message);
             return null;
         }
     }

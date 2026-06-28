@@ -5,15 +5,17 @@ using UnityEngine;
 
 namespace GameWatcher.Plugin;
 
-// Outfit preset panel injected into Among Us's customization screen (PlayerCustomizationMenu).
-// "0" clears all cosmetics (always blank). Slots 1-6 are sprite frames: click to WEAR + make active
-// (gold "SELECTED"); while active, equipped changes auto-save in. Frames use a material lifted from a
-// live menu sprite (a from-scratch SpriteRenderer renders invisible in IL2CPP without one).
+// Outfit preset panel injected into Among Us's customization screen (PlayerCustomizationMenu). Slots
+// are box outlines (procedural sprite, tinted per state). "0" clears all cosmetics (always blank).
+// Slots 1-6: click to WEAR + make active (gold "SELECTED"); while active, equipped changes auto-save.
 public static class OutfitMenu
 {
-    private static readonly Color Dim = new Color(0.62f, 0.66f, 0.72f);
-    private static readonly Color Navy = new Color(0.09f, 0.11f, 0.20f);
-    private static readonly Color FadedFrame = new Color(1f, 1f, 1f, 0.45f);
+    private static readonly Color Gold = new Color(1f, 0.82f, 0.25f);
+    private static readonly Color Dim = new Color(0.55f, 0.60f, 0.68f);
+
+    // Layout (local to the menu, near the Equip button). Moved right + down, smaller than before.
+    private const float Scale = 0.62f, ColStep = 0.85f, RowStep = 0.85f, GridX0 = -1.7f, GridY0 = 1.0f;
+    private const float GridCx = GridX0 + ColStep; // grid centre x
 
     private static GameObject[] _slots;
     private static SpriteRenderer[] _slotSr;
@@ -45,7 +47,7 @@ public static class OutfitMenu
     private static void Build(PlayerCustomizationMenu menu)
     {
         var anchor = menu.equipButton;
-        if (anchor == null || OutfitAssets.Normal == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no anchor/asset"); return; }
+        if (anchor == null || OutfitAssets.Outline == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no anchor/outline"); return; }
         _activeSlot = -1;
         _lastOutfit = OutfitPresets.Capture();
         int n = OutfitPresets.SlotCount;
@@ -58,32 +60,31 @@ public static class OutfitMenu
         int order = BaseOrder(menu);
         int layer = BaseLayer(menu);
         var anchorSr = anchor.GetComponentInChildren<SpriteRenderer>();
-        var mat = anchorSr != null ? anchorSr.sharedMaterial : null; // the working sprite material
-        GameWatcherPlugin.Logger?.LogInfo($"[outfit] anchor local={anchor.transform.localPosition} order={order} mat={(mat != null ? mat.name : "null")}");
+        var mat = anchorSr != null ? anchorSr.sharedMaterial : null;
 
         if (menu.itemName != null)
-            MakeLabel(menu.itemName, parent, new Vector3(-2.2f, 2.45f, z), "OUTFIT PRESETS", 2.1f, Color.white, order + 2, false);
+            MakeLabel(menu.itemName, parent, new Vector3(GridCx, GridY0 + 0.72f, z), "OUTFIT PRESETS", 1.7f, Color.white, order + 2, false);
 
-        // 3x2 grid of slot frames 1-6.
         for (int i = 0; i < n; i++)
         {
             int col = i % 3, row = i / 3;
-            var pos = new Vector3(-3.35f + col * 1.15f, 1.55f - row * 0.95f, z);
+            var pos = new Vector3(GridX0 + col * ColStep, GridY0 - row * RowStep, z);
             _slots[i] = MakeFrame(parent, pos, layer, order, mat, out _slotSr[i]);
             _slotText[i] = menu.itemName != null
-                ? MakeLabel(menu.itemName, parent, new Vector3(pos.x, pos.y, z - 0.1f), "", 1.7f, Color.white, order + 2, true)
+                ? MakeLabel(menu.itemName, parent, new Vector3(pos.x, pos.y, z - 0.1f), "", 1.3f, Color.white, order + 2, true)
                 : null;
         }
 
-        // "0" = clear everything (always blank), below the grid.
-        _clearBtn = MakeFrame(parent, new Vector3(-2.2f, -0.25f, z), layer, order, mat, out _);
+        // "0" = clear everything (always blank), centred below the grid.
+        var clearPos = new Vector3(GridCx, GridY0 - 2 * RowStep, z);
+        _clearBtn = MakeFrame(parent, clearPos, layer, order, mat, out _);
         if (menu.itemName != null)
-            MakeLabel(menu.itemName, parent, new Vector3(-2.2f, -0.25f, z - 0.1f), "0", 1.7f, Color.white, order + 2, true);
+            MakeLabel(menu.itemName, parent, new Vector3(clearPos.x, clearPos.y, z - 0.1f), "0", 1.3f, Color.white, order + 2, true);
         if (menu.itemName != null)
-            MakeLabel(menu.itemName, parent, new Vector3(-2.2f, -0.85f, z), "click = wear · 0 = clear", 1.25f, Dim, order + 2, false);
+            MakeLabel(menu.itemName, parent, new Vector3(GridCx, GridY0 - 2 * RowStep - 0.55f, z), "click = wear · 0 = clear", 1.1f, Dim, order + 2, false);
 
         Refresh();
-        GameWatcherPlugin.Logger?.LogInfo("[outfit] sprite panel built");
+        GameWatcherPlugin.Logger?.LogInfo($"[outfit] panel built (order={order}, mat={(mat != null ? mat.name : "null")})");
     }
 
     private static GameObject MakeFrame(Transform parent, Vector3 pos, int layer, int order, Material mat, out SpriteRenderer sr)
@@ -91,10 +92,10 @@ public static class OutfitMenu
         var go = new GameObject("OutfitSlot");
         go.transform.SetParent(parent, false);
         go.transform.localPosition = pos;
-        go.transform.localScale = Vector3.one * 0.82f; // sprite is 1 world unit -> ~0.82 button
+        go.transform.localScale = Vector3.one * Scale;
         sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = OutfitAssets.Normal;
-        if (mat != null) sr.sharedMaterial = mat; // CRITICAL in IL2CPP — else renders invisible
+        sr.sprite = OutfitAssets.Outline;
+        if (mat != null) sr.sharedMaterial = mat; // CRITICAL in IL2CPP, else invisible
         sr.sortingLayerID = layer;
         sr.sortingOrder = order;
         return go;
@@ -125,7 +126,7 @@ public static class OutfitMenu
         if (cam == null) return;
         Vector3 m = cam.ScreenToWorldPoint(Input.mousePosition);
 
-        if (Hit(_clearBtn, m)) // preset 0: strip everything, no active slot (so nothing auto-saves)
+        if (Hit(_clearBtn, m))
         {
             OutfitPresets.ApplyClear();
             _activeSlot = -1;
@@ -161,15 +162,12 @@ public static class OutfitMenu
         {
             bool active = i == _activeSlot;
             bool set = OutfitPresets.IsSet(i);
-            if (_slotSr[i] != null)
-            {
-                _slotSr[i].sprite = active ? OutfitAssets.Active : OutfitAssets.Normal;
-                _slotSr[i].color = active || set ? Color.white : FadedFrame;
-            }
+            var tint = active ? Gold : (set ? Color.white : Dim);
+            if (_slotSr[i] != null) _slotSr[i].color = tint;
             if (_slotText[i] != null)
             {
                 _slotText[i].text = active ? "SELECTED" : $"{i + 1}";
-                _slotText[i].color = active ? Navy : (set ? Color.white : Dim);
+                _slotText[i].color = tint;
             }
         }
     }
@@ -183,8 +181,6 @@ public static class OutfitMenu
         return world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y;
     }
 
-    // Anchor frames + labels to itemName's sorting layer (the foreground the labels already render
-    // on), bumped above the menu content.
     private static int BaseOrder(PlayerCustomizationMenu menu)
     {
         var r = menu.itemName != null ? menu.itemName.GetComponent<Renderer>() : null;

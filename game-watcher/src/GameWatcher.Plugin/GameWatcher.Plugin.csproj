@@ -34,14 +34,4 @@
     <ProjectReference Include="..\GameWatcher.Core\GameWatcher.Core.csproj" />
   </ItemGroup>
 
-  <!-- Outfit-menu sprites, embedded so the DLL is self-contained (loaded at runtime via LogicalName). -->
-  <ItemGroup>
-    <EmbeddedResource Include="Assets\outfit_slot.png">
-      <LogicalName>outfit_slot.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Assets\outfit_slot_active.png">
-      <LogicalName>outfit_slot_active.png</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
 </Project>
