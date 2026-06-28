@@ -67,7 +67,7 @@ public static class DebugInjector
         var imp = roster[impIndex];
         RosterEntry crew = roster.Find(r => r.Role == Role.CREW && host.IsLinked(r.InGameId));
 
-        string code = "DBG-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + "-" + (++_counter);
+        string code = "DBG-" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + "-" + (++_counter);
         host.Enqueue(new GameStarted(code, "Skeld", DateTimeOffset.UtcNow, roster));
         foreach (var r in roster) if (r.Role == Role.CREW) host.Enqueue(new TasksAssigned(r.InGameId, 5));
         if (crew != null)

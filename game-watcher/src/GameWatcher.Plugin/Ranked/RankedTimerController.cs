@@ -77,6 +77,10 @@ public static class RankedTimerController
         var gd = GameData.Instance;
         bool tasksDone = gd != null && gd.TotalTasks > 0 && gd.CompletedTasks >= gd.TotalTasks;
         if (tasksDone) { GameWatcherPlugin.Logger?.LogInfo("[timer] expired but tasks complete - no force"); return; }
+        // Don't force an impostor win if the impostors are already dead (the timer could expire the same
+        // frame the last impostor is ejected/killed, before OnGameEnd flips us off) — that would override
+        // a crew win.
+        if (!AnyImpostorAlive()) { GameWatcherPlugin.Logger?.LogInfo("[timer] expired but impostors dead - no force"); return; }
         try
         {
             var gm = GameManager.Instance;
@@ -88,6 +92,18 @@ public static class RankedTimerController
             else GameWatcherPlugin.Logger?.LogWarning("[timer] expired but GameManager null - could not force-end");
         }
         catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[timer] force-end failed: " + e.Message); }
+    }
+
+    private static bool AnyImpostorAlive()
+    {
+        var all = PlayerControl.AllPlayerControls;
+        for (int i = 0; i < all.Count; i++)
+        {
+            var pc = all[i];
+            if (pc != null && pc.Data != null && pc.Data.Role != null && pc.Data.Role.IsImpostor && !pc.Data.IsDead)
+                return true;
+        }
+        return false;
     }
 
     private static void Announce()

@@ -1,3 +1,4 @@
+using System;
 using GameWatcher.Core;
 using HarmonyLib;
 
@@ -12,30 +13,34 @@ public static class ChatCommandPatch
 {
     public static void Postfix(PlayerControl sourcePlayer, string chatText)
     {
-        var local = PlayerControl.LocalPlayer;
-        if (local == null || sourcePlayer == null || sourcePlayer.PlayerId != local.PlayerId) return;
-
-        var text = (chatText ?? string.Empty).Trim();
-        var lower = text.ToLowerInvariant();
-
-        if (lower.StartsWith("/outfit")) { HandleOutfit(lower); return; }
-        if (!lower.StartsWith("/ranked")) return;
-
-        var arg = text.Length > 7 ? text.Substring(7).Trim().ToLowerInvariant() : string.Empty;
-        switch (arg)
+        try
         {
-            case "on":
-                RankedState.Enabled = true;
-                Announce("Ranked: ON");
-                break;
-            case "off":
-                RankedState.Enabled = false;
-                Announce("Ranked: OFF");
-                break;
-            default: // bare "/ranked" or "/ranked status"
-                Announce(StatusLine());
-                break;
+            var local = PlayerControl.LocalPlayer;
+            if (local == null || sourcePlayer == null || sourcePlayer.PlayerId != local.PlayerId) return;
+
+            var text = (chatText ?? string.Empty).Trim();
+            var lower = text.ToLowerInvariant();
+
+            if (lower.StartsWith("/outfit")) { HandleOutfit(lower); return; }
+            if (!lower.StartsWith("/ranked")) return;
+
+            var arg = text.Length > 7 ? text.Substring(7).Trim().ToLowerInvariant() : string.Empty;
+            switch (arg)
+            {
+                case "on":
+                    RankedState.Enabled = true;
+                    Announce("Ranked: ON");
+                    break;
+                case "off":
+                    RankedState.Enabled = false;
+                    Announce("Ranked: OFF");
+                    break;
+                default: // bare "/ranked" or "/ranked status"
+                    Announce(StatusLine());
+                    break;
+            }
         }
+        catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[chat] " + e.Message); }
     }
 
     // Outfit presets (also driven by the in-lobby menu): "/outfit 3" wears slot 3, "/outfit save 3"

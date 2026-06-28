@@ -19,6 +19,8 @@ public static class StartGate
     {
         public static void Postfix()
         {
+          try
+          {
             var host = GameWatcherPlugin.Host;
             if (host == null || !host.RankedActive) return;
 
@@ -53,6 +55,8 @@ public static class StartGate
             }
             if (players.Count == 0) return;
             host.CheckRoster(players, names);
+          }
+          catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[gate] snapshot: " + e.Message); }
         }
     }
 

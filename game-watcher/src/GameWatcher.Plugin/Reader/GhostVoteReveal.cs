@@ -15,6 +15,7 @@ public static class GhostVoteReveal
 {
     private static readonly Color ImpRed = new Color(1f, 0.25f, 0.25f);
     private static TextMeshPro _overlay;
+    private static MeetingHud _ownerHud; // the meeting the overlay belongs to (rebuild when it changes)
 
     [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Update))]
     public static class Patch
@@ -81,7 +82,8 @@ public static class GhostVoteReveal
     private static string ColoredName(PlayerControl pc)
     {
         if (pc == null || pc.Data == null) return null;
-        string name = pc.Data.PlayerName ?? "?";
+        // Strip rich-text markup chars so a crafted player name can't inject tags into the overlay.
+        string name = (pc.Data.PlayerName ?? "?").Replace("<", "").Replace(">", "");
         try
         {
             var c = Palette.PlayerColors[pc.Data.DefaultOutfit.ColorId];
@@ -100,7 +102,8 @@ public static class GhostVoteReveal
 
     private static void EnsureOverlay(MeetingHud hud)
     {
-        if (_overlay != null) return;
+        if (_overlay != null && _ownerHud == hud) return; // still valid for this meeting
+        _overlay = null;                                  // a new meeting destroyed the old overlay -> rebuild
         // Clone a meeting name label so we inherit the meeting font/material/sorting layer.
         TextMeshPro src = null;
         var states = hud.playerStates;
@@ -119,5 +122,6 @@ public static class GhostVoteReveal
         _overlay.color = Color.white;
         var r = _overlay.GetComponent<Renderer>();
         if (r != null) r.sortingOrder = 100; // above the meeting UI
+        _ownerHud = hud;
     }
 }

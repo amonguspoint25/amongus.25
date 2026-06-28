@@ -35,6 +35,12 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
     .map((p) => ({ p, player: byId.get(p.playerId) }))
     .filter((r): r is { p: typeof r.p; player: NonNullable<typeof r.player> } => !!r.player);
 
+  // Defensive: if dropping unlinked players left a whole role empty, the match is incomplete — don't
+  // record a one-role match (our plugin already refuses to send these; this guards other clients).
+  if (!rows.some((r) => r.p.role === "CREW") || !rows.some((r) => r.p.role === "IMPOSTOR")) {
+    return { matchId: "", results: [] };
+  }
+
   try {
     return await prisma.$transaction(async (tx) => {
       const season = await getOrCreateActiveSeason(tx);
@@ -72,7 +78,7 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
 
         // Disconnected player: recorded in the match for history, but ELO is nullified (no gain/loss)
         // and the game does NOT count toward their stats. Everyone else still scores normally.
-        if (p.disconnected) {
+        if (p.disconnected === true) {
           await tx.matchParticipant.create({
             data: {
               matchId: match.id,

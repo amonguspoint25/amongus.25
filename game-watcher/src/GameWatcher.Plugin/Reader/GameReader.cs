@@ -26,12 +26,12 @@ public static class GameReader
     [HarmonyPatch(typeof(LobbyBehaviour), nameof(LobbyBehaviour.Start))]
     public static class LobbyReset
     {
-        public static void Postfix()
+        public static void Postfix() => Guard("lobby", () =>
         {
             if (_recording) GameWatcherPlugin.Logger?.LogInfo("[reader] back in lobby - reset stale game state");
             _recording = false;
             RankedTimerController.OnGameEnd();
-        }
+        });
     }
 
     // GAME START: roster + roles + per-crew task counts. IntroCutscene.OnDestroy fires once the
@@ -39,7 +39,7 @@ public static class GameReader
     [HarmonyPatch(typeof(IntroCutscene), nameof(IntroCutscene.OnDestroy))]
     public static class Start
     {
-        public static void Postfix()
+        public static void Postfix() => Guard("start", () =>
         {
             _recording = Active;
             if (!_recording) return;
@@ -65,32 +65,32 @@ public static class GameReader
             }
             RankedTimerController.OnGameStart();
             GameWatcherPlugin.Logger?.LogInfo($"[reader] start {_code}: {roster.Count} players");
-        }
+        });
     }
 
     // KILL: __instance is the killer, target is the victim.
     [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
     public static class Kill
     {
-        public static void Postfix(PlayerControl __instance, PlayerControl target)
+        public static void Postfix(PlayerControl __instance, PlayerControl target) => Guard("kill", () =>
         {
             if (!_recording || __instance == null || target == null) return;
             Emit(new PlayerKilled(__instance.PlayerId.ToString(), target.PlayerId.ToString(), AtMs()));
-        }
+        });
     }
 
     // MEETING START: pause the task timer.
     [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Start))]
     public static class MeetingStart
     {
-        public static void Postfix() { if (_recording) RankedTimerController.OnMeetingStart(); }
+        public static void Postfix() => Guard("meetingStart", () => { if (_recording) RankedTimerController.OnMeetingStart(); });
     }
 
     // MEETING END: who was ejected + every real vote; resume the timer.
     [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.VotingComplete))]
     public static class MeetingEnd
     {
-        public static void Postfix(Il2CppStructArray<MeetingHud.VoterState> states, NetworkedPlayerInfo exiled, bool tie)
+        public static void Postfix(Il2CppStructArray<MeetingHud.VoterState> states, NetworkedPlayerInfo exiled, bool tie) => Guard("meeting", () =>
         {
             if (!_recording) return;
             string ejected = exiled != null ? exiled.PlayerId.ToString() : null;
@@ -106,14 +106,14 @@ public static class GameReader
             Emit(new MeetingEnded(ejected, votes));
             RankedTimerController.OnMeetingEnd();
             GameWatcherPlugin.Logger?.LogInfo($"[reader] meeting: ejected={ejected ?? "none"} votes={votes.Count}");
-        }
+        });
     }
 
     // GAME END: synthesize per-player task completions from the final task state, then the outcome.
     [HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnGameEnd))]
     public static class End
     {
-        public static void Postfix(EndGameResult endGameResult)
+        public static void Postfix(EndGameResult endGameResult) => Guard("end", () =>
         {
             RankedTimerController.OnGameEnd();
             if (!_recording) return;
@@ -136,7 +136,14 @@ public static class GameReader
             var outcome = MapOutcome(reason);
             Emit(new GameEnded(outcome, DateTimeOffset.UtcNow));
             GameWatcherPlugin.Logger?.LogInfo($"[reader] end {_code}: reason={reason} -> {outcome}");
-        }
+        });
+    }
+
+    // Every reader hook runs through this — a Harmony patch must never let an Il2Cpp hiccup crash the game.
+    private static void Guard(string tag, Action body)
+    {
+        try { body(); }
+        catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning($"[reader] {tag}: {e.Message}"); }
     }
 
     private static PlayerControl PlayerById(byte id)
