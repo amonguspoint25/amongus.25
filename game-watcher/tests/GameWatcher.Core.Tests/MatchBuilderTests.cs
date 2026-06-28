@@ -15,9 +15,9 @@ namespace GameWatcher.Core.Tests
             outcome,
             new[]
             {
-                new PlayerTally("imp", "Imp", Role.IMPOSTOR, 2, 0, 0, 0, 0, true),
-                new PlayerTally("c1", "C1", Role.CREW, 0, 1, 0, 3, 5, true),
-                new PlayerTally("c2", "C2", Role.CREW, 0, 0, 1, 5, 5, false),
+                new PlayerTally("imp", "Imp", Role.IMPOSTOR, 2, 0, 0, 0, 0, true, 0),
+                new PlayerTally("c1", "C1", Role.CREW, 0, 1, 0, 3, 5, true, 0),
+                new PlayerTally("c2", "C2", Role.CREW, 0, 0, 1, 5, 5, false, 0),
             });
 
         private static Dictionary<string, string> FullMap() =>
@@ -77,7 +77,7 @@ namespace GameWatcher.Core.Tests
             // Independently pin the EndedAt==null sub-condition (kills the ||->&& mutant).
             var m = new RecordedMatch("M1", "Skeld", DateTimeOffset.Parse("2026-06-27T17:00:00Z"),
                 null, Outcome.IMP_WIN,
-                new[] { new PlayerTally("imp", "Imp", Role.IMPOSTOR, 2, 0, 0, 0, 0, true) });
+                new[] { new PlayerTally("imp", "Imp", Role.IMPOSTOR, 2, 0, 0, 0, 0, true, 0) });
             var res = new MatchBuilder().Build(m, new Dictionary<string, string> { ["imp"] = "P_imp" });
 
             Assert.False(res.Ok);
@@ -104,8 +104,8 @@ namespace GameWatcher.Core.Tests
                 Outcome.IMP_WIN,
                 new[]
                 {
-                    new PlayerTally("imp", "Imp", Role.IMPOSTOR, 1, 0, 0, 0, 0, true),
-                    new PlayerTally("c1", "C1", Role.CREW, 0, 0, 0, 1, 1, true),
+                    new PlayerTally("imp", "Imp", Role.IMPOSTOR, 1, 0, 0, 0, 0, true, 0),
+                    new PlayerTally("c1", "C1", Role.CREW, 0, 0, 0, 1, 1, true, 0),
                 });
             var res = new MatchBuilder().Build(m, new Dictionary<string, string> { ["imp"] = "P_imp", ["c1"] = "P_c1" });
 

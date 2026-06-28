@@ -121,5 +121,24 @@ namespace GameWatcher.Core.Tests
             Assert.Equal(0, snap.Players.Single(p => p.InGameId == "c1").IncorrectShots);
             Assert.True(snap.Players.Single(p => p.InGameId == "imp").Survived); // off-roster ejectee no-op
         }
+
+        [Fact]
+        public void Counts_rounds_survived_excluding_ejection_and_death_rounds()
+        {
+            var r = new MatchRecorder();
+            r.Apply(Start()); // roster: imp, c1, c2
+            // Meeting 1: nobody ejected -> imp, c1, c2 each +1
+            r.Apply(new MeetingEnded(null, System.Array.Empty<VoteCast>()));
+            // c2 killed during round 2
+            r.Apply(new PlayerKilled("imp", "c2", 1000));
+            // Meeting 2: imp ejected -> c1 +1 (alive, not ejected); imp gets NO credit (ejected here); c2 dead, no credit
+            r.Apply(new MeetingEnded("imp", System.Array.Empty<VoteCast>()));
+            r.Apply(new GameEnded(Outcome.CREW_WIN, DateTimeOffset.Parse("2026-06-27T17:15:00Z")));
+
+            var snap = r.Snapshot();
+            Assert.Equal(1, snap.Players.Single(p => p.InGameId == "imp").RoundsSurvived); // survived meeting 1 only
+            Assert.Equal(2, snap.Players.Single(p => p.InGameId == "c1").RoundsSurvived);  // both meetings
+            Assert.Equal(1, snap.Players.Single(p => p.InGameId == "c2").RoundsSurvived);  // meeting 1; dead by meeting 2
+        }
     }
 }

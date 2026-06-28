@@ -15,7 +15,8 @@ namespace GameWatcher.Core
         int IncorrectShots,
         int TasksDone,
         int TasksTotal,
-        bool Survived);
+        bool Survived,
+        int RoundsSurvived);
 
     public sealed record RecordedMatch(
         string MatchCode,
@@ -42,6 +43,7 @@ namespace GameWatcher.Core
             public int TasksDone;
             public int TasksTotal;
             public bool Survived = true;
+            public int RoundsSurvived;
         }
 
         private readonly Dictionary<string, Tally> _players = new();
@@ -87,6 +89,13 @@ namespace GameWatcher.Core
 
         private void ApplyMeeting(MeetingEnded me)
         {
+            // Round-survival (spec §10): credit every player who entered this meeting alive and
+            // was NOT ejected here. Done before marking the ejected dead so they get no credit
+            // for the round they were voted out in; players already dead (Survived=false) get none.
+            foreach (var kv in _players)
+                if (kv.Value.Survived && kv.Key != me.EjectedInGameId)
+                    kv.Value.RoundsSurvived++;
+
             if (me.EjectedInGameId != null && _players.TryGetValue(me.EjectedInGameId, out var ejected))
                 ejected.Survived = false;
 
@@ -132,7 +141,8 @@ namespace GameWatcher.Core
                     // the match.
                     TasksDone: Math.Min(kv.Value.TasksDone, kv.Value.TasksTotal),
                     TasksTotal: kv.Value.TasksTotal,
-                    Survived: kv.Value.Survived))
+                    Survived: kv.Value.Survived,
+                    RoundsSurvived: kv.Value.RoundsSurvived))
                 .ToList();
 
             return new RecordedMatch(_matchCode, _map, _startedAt, _endedAt, _outcome, players);
