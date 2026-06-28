@@ -19,6 +19,16 @@ public static class StartGate
         {
             var host = GameWatcherPlugin.Host;
             if (host == null || !host.RankedActive) return;
+
+            // Send any pending "you're not linked" notice raised by the background resolve.
+            // RpcSendChat must run on the main thread, which is here.
+            var notice = host.TakePendingAnnounce();
+            if (notice != null)
+            {
+                var lp = PlayerControl.LocalPlayer;
+                if (lp != null) lp.RpcSendChat(notice);
+            }
+
             if (Time.realtimeSinceStartup < _nextCheck) return;
             _nextCheck = Time.realtimeSinceStartup + 3f;
 
