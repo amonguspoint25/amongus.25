@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/GameWatcher.Core/GameWatcher.Core.csproj" />
+    <Project Path="src/GameWatcher.Plugin/GameWatcher.Plugin.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GameWatcher.Core.Tests/GameWatcher.Core.Tests.csproj" />
