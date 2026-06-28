@@ -6,15 +6,17 @@ using UnityEngine;
 namespace GameWatcher.Plugin;
 
 // Outfit preset panel injected into Among Us's customization screen (PlayerCustomizationMenu). Six
-// slot buttons cloned from the menu's native Equip button, with a header + subtitle cloned from the
-// menu's item-name label. Click a slot to WEAR it + make it active (shows "SELECTED"); while a slot
-// is active, any cosmetic change you equip auto-saves into it. No save button.
+// slot frames (custom AU-style sprites) with a number label each, plus a header + subtitle. Click a
+// slot to WEAR it + make it active (gold frame, "SELECTED"); while active, any cosmetic change you
+// equip auto-saves into it. Empty slots are faded; saved slots are blue. No save button.
 public static class OutfitMenu
 {
-    private static readonly Color Gold = new Color(1f, 0.82f, 0.25f);
-    private static readonly Color Dim = new Color(0.5f, 0.5f, 0.55f);
+    private static readonly Color Dim = new Color(0.62f, 0.66f, 0.72f);
+    private static readonly Color Navy = new Color(0.09f, 0.11f, 0.20f);
+    private static readonly Color FadedFrame = new Color(1f, 1f, 1f, 0.45f);
 
     private static GameObject[] _slots;
+    private static SpriteRenderer[] _slotSr;
     private static TextMeshPro[] _slotText;
     private static int _activeSlot = -1;
     private static OutfitData _lastOutfit;
@@ -41,58 +43,68 @@ public static class OutfitMenu
 
     private static void Build(PlayerCustomizationMenu menu)
     {
-        var src = menu.equipButton;
-        if (src == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no equipButton to clone"); return; }
+        var anchor = menu.equipButton;
+        if (anchor == null || OutfitAssets.Normal == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no anchor/asset"); return; }
         _activeSlot = -1;
         _lastOutfit = OutfitPresets.Capture();
-        _slots = new GameObject[OutfitPresets.SlotCount];
-        _slotText = new TextMeshPro[OutfitPresets.SlotCount];
+        int n = OutfitPresets.SlotCount;
+        _slots = new GameObject[n];
+        _slotSr = new SpriteRenderer[n];
+        _slotText = new TextMeshPro[n];
 
-        var parent = src.transform.parent;
-        var z = src.transform.localPosition.z;
-        GameWatcherPlugin.Logger?.LogInfo($"[outfit] equipButton local={src.transform.localPosition} cam={(Camera.main != null ? Camera.main.name : "null")}");
+        var parent = anchor.transform.parent;
+        float z = anchor.transform.localPosition.z;
+        int order = BaseOrder(menu);
+        int layer = BaseLayer(menu);
+        GameWatcherPlugin.Logger?.LogInfo($"[outfit] anchor local={anchor.transform.localPosition} order={order} cam={(Camera.main != null ? Camera.main.name : "null")}");
 
-        // Header + subtitle, cloned from the menu's native item-name label so the font matches.
         if (menu.itemName != null)
         {
-            Label(menu.itemName, parent, new Vector3(-2.25f, 2.15f, z), "OUTFIT PRESETS", 2.6f, Color.white);
-            Label(menu.itemName, parent, new Vector3(-2.25f, -0.35f, z), "click to wear · edits auto-save", 1.4f, Dim);
+            MakeLabel(menu.itemName, parent, new Vector3(-2.2f, 2.25f, z), "OUTFIT PRESETS", 2.6f, Color.white, order + 3, false);
+            MakeLabel(menu.itemName, parent, new Vector3(-2.2f, -0.55f, z), "click to wear · edits auto-save", 1.35f, Dim, order + 3, false);
         }
 
-        // 3x2 grid of slot buttons. Coordinates are first-pass guesses, calibrated against the log later.
-        for (int i = 0; i < OutfitPresets.SlotCount; i++)
+        // 3x2 grid of sprite frames + a number label centered on each.
+        for (int i = 0; i < n; i++)
         {
             int col = i % 3, row = i / 3;
-            _slots[i] = CloneButton(src, new Vector3(-3.4f + col * 1.15f, 1.45f - row * 0.95f, z), out _slotText[i]);
+            var pos = new Vector3(-3.35f + col * 1.15f, 1.5f - row * 0.95f, z);
+            _slots[i] = MakeFrame(parent, pos, layer, order, out _slotSr[i]);
+            _slotText[i] = menu.itemName != null
+                ? MakeLabel(menu.itemName, parent, new Vector3(pos.x, pos.y, z - 0.1f), "", 1.7f, Color.white, order + 2, true)
+                : null;
         }
         Refresh();
-        GameWatcherPlugin.Logger?.LogInfo("[outfit] panel built in customization menu");
+        GameWatcherPlugin.Logger?.LogInfo("[outfit] sprite panel built");
     }
 
-    private static GameObject CloneButton(GameObject src, Vector3 local, out TextMeshPro txt)
+    private static GameObject MakeFrame(Transform parent, Vector3 pos, int layer, int order, out SpriteRenderer sr)
     {
-        var go = UnityEngine.Object.Instantiate(src, src.transform.parent);
-        go.name = "OutfitSlot";
-        go.transform.localPosition = local;
-        go.transform.localScale = src.transform.localScale * 0.66f;
-        go.SetActive(true);
-        var pb = go.GetComponent<PassiveButton>();
-        txt = pb != null && pb.buttonText != null ? pb.buttonText : go.GetComponentInChildren<TextMeshPro>();
-        if (txt != null) { txt.enableAutoSizing = true; txt.enableWordWrapping = false; } // so "SELECTED" fits
+        var go = new GameObject("OutfitSlot");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = pos;
+        go.transform.localScale = Vector3.one * 0.82f; // sprite is 1 world unit -> ~0.82 button
+        sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = OutfitAssets.Normal;
+        sr.sortingLayerID = layer;
+        sr.sortingOrder = order;
         return go;
     }
 
-    private static TextMeshPro Label(TextMeshPro src, Transform parent, Vector3 local, string text, float size, Color color)
+    private static TextMeshPro MakeLabel(TextMeshPro src, Transform parent, Vector3 pos, string text, float size, Color color, int order, bool autoSize)
     {
         var t = UnityEngine.Object.Instantiate(src, parent);
         t.name = "OutfitLabel";
-        t.transform.localPosition = local;
+        t.transform.localPosition = pos;
+        t.transform.localScale = Vector3.one;
         t.alignment = TextAlignmentOptions.Center;
-        t.enableAutoSizing = false;
-        t.fontSize = size;
         t.enableWordWrapping = false;
+        t.enableAutoSizing = autoSize;
+        t.fontSize = size;
         t.text = text;
         t.color = color;
+        var r = t.GetComponent<Renderer>();
+        if (r != null) r.sortingOrder = order;
         t.gameObject.SetActive(true);
         return t;
     }
@@ -110,7 +122,7 @@ public static class OutfitMenu
             if (!Hit(_slots[i], m)) continue;
             _activeSlot = i;
             if (OutfitPresets.IsSet(i)) OutfitPresets.Apply(i);
-            else OutfitPresets.Store(i, OutfitPresets.Capture()); // empty slot captures current
+            else OutfitPresets.Store(i, OutfitPresets.Capture());
             _lastOutfit = OutfitPresets.Capture();
             GameWatcherPlugin.Logger?.LogInfo($"[outfit] active slot {i + 1}");
             return;
@@ -130,24 +142,20 @@ public static class OutfitMenu
 
     private static void Refresh()
     {
-        if (_slotText == null) return;
-        for (int i = 0; i < _slotText.Length; i++)
+        if (_slotSr == null) return;
+        for (int i = 0; i < _slotSr.Length; i++)
         {
-            if (_slotText[i] == null) continue;
-            if (i == _activeSlot)
+            bool active = i == _activeSlot;
+            bool set = OutfitPresets.IsSet(i);
+            if (_slotSr[i] != null)
             {
-                _slotText[i].text = "SELECTED";
-                _slotText[i].color = Gold;
+                _slotSr[i].sprite = active ? OutfitAssets.Active : OutfitAssets.Normal;
+                _slotSr[i].color = active || set ? Color.white : FadedFrame; // empty frame is faded
             }
-            else if (OutfitPresets.IsSet(i))
+            if (_slotText[i] != null)
             {
-                _slotText[i].text = $"OUTFIT {i + 1}";
-                _slotText[i].color = Color.white;
-            }
-            else
-            {
-                _slotText[i].text = $"EMPTY {i + 1}";
-                _slotText[i].color = Dim;
+                _slotText[i].text = active ? "SELECTED" : $"{i + 1}";
+                _slotText[i].color = active ? Navy : (set ? Color.white : Dim); // dark text on gold
             }
         }
     }
@@ -159,5 +167,18 @@ public static class OutfitMenu
         if (rend == null) return false;
         var b = rend.bounds;
         return world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y;
+    }
+
+    private static int BaseOrder(PlayerCustomizationMenu menu)
+    {
+        var r = menu.itemName != null ? menu.itemName.GetComponent<Renderer>() : null;
+        if (r == null) r = menu.equipButton != null ? menu.equipButton.GetComponentInChildren<SpriteRenderer>() : null;
+        return r != null ? r.sortingOrder + 1 : 60;
+    }
+
+    private static int BaseLayer(PlayerCustomizationMenu menu)
+    {
+        var sr = menu.equipButton != null ? menu.equipButton.GetComponentInChildren<SpriteRenderer>() : null;
+        return sr != null ? sr.sortingLayerID : 0;
     }
 }
