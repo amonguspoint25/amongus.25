@@ -8,7 +8,6 @@ namespace GameWatcher.Plugin;
 // every off-preset thing, else null. All reads are synchronous; called on the main thread at Start.
 public static class RankedSettings
 {
-    public const int MinLinkedPlayers = 10;
     private const float CrewVision = 0.25f;
     private const float ImpVision = 1.75f;
     private const float KillCooldown = 22.5f;
@@ -17,8 +16,9 @@ public static class RankedSettings
 
     public static string Check(int linkedCount)
     {
+        int minPlayers = GameWatcherPlugin.Settings != null ? GameWatcherPlugin.Settings.MinLinkedPlayers.Value : 10;
         var bad = new List<string>();
-        if (linkedCount < MinLinkedPlayers) bad.Add($"need {MinLinkedPlayers} linked (have {linkedCount})");
+        if (linkedCount < minPlayers) bad.Add($"need {minPlayers} linked (have {linkedCount})");
 
         var go = GameOptionsManager.Instance?.CurrentGameOptions;
         if (go != null)

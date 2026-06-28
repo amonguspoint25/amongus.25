@@ -10,6 +10,7 @@ public sealed class PluginConfig
     public ConfigEntry<string> HostKey { get; }
     public ConfigEntry<bool> RankedEnabled { get; }
     public ConfigEntry<int> TimerMinutes { get; }
+    public ConfigEntry<int> MinLinkedPlayers { get; }
 
     public PluginConfig(ConfigFile config)
     {
@@ -20,6 +21,8 @@ public sealed class PluginConfig
         RankedEnabled = config.Bind("GameWatcher", "RankedEnabled", true,
             "Default ranked state at launch. /ranked on|off flips it at runtime.");
         TimerMinutes = config.Bind("GameWatcher", "TimerMinutes", 18,
-            "Ranked task-deadline timer length, in minutes.");
+            "Ranked task-deadline timer length, in minutes. Lower (e.g. 1) to test the force-end.");
+        MinLinkedPlayers = config.Bind("GameWatcher", "MinLinkedPlayers", 10,
+            "Minimum linked players required to start a ranked game. Lower (e.g. 2) to test with a few friends.");
     }
 }
