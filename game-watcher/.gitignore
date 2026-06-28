@@ -1,0 +1,18 @@
+# .NET build output — keep the game-watcher solution from polluting the Next/Vercel build.
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# Test/coverage artifacts
+[Tt]est[Rr]esults/
+*.coverage
+*.coverlet.json
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Rider/VS
+.vs/
+.idea/
+*.user

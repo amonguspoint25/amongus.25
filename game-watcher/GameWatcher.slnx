@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GameWatcher.Core/GameWatcher.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameWatcher.Core.Tests/GameWatcher.Core.Tests.csproj" />
+  </Folder>
+</Solution>
