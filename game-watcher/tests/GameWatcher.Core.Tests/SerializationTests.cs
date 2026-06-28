@@ -78,5 +78,13 @@ namespace GameWatcher.Core.Tests
             Assert.NotNull(back);
             Assert.Equal(json, GameWatcherJson.Serialize(back!));
         }
+
+        [Fact]
+        public void RoundsSurvived_serializes_as_a_camelCase_number()
+        {
+            var p = new Participant("imp1", Role.IMPOSTOR, true, 1, 0, 0, 0, 0, true, RoundsSurvived: 4);
+            using var doc = JsonDocument.Parse(GameWatcherJson.Serialize(p));
+            Assert.Equal(4, doc.RootElement.GetProperty("roundsSurvived").GetInt32());
+        }
     }
 }

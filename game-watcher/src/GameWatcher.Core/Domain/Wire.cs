@@ -23,6 +23,7 @@ namespace GameWatcher.Core.Domain
         int TasksDone,               // server requires TasksDone <= TasksTotal
         int TasksTotal,
         bool Survived,
-        int? TimeToKillMs = null,    // DEFERRED (schema-optional) — omitted when null
+        int RoundsSurvived = 0,      // count of meeting rounds alive-and-not-ejected (spec §10)
+        int? TimeToKillMs = null,    // DEFERRED no longer — derived by the recorder (Task 3)
         int? TimeToTaskMs = null);
 }
