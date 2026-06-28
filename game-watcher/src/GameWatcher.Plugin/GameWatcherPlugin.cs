@@ -6,18 +6,24 @@ using Reactor;
 namespace GameWatcher.Plugin;
 
 // Host-only ranked capture mod. Plan B builds the Game Reader + BrainHost on top of this.
-// For now this is the Phase-0 skeleton: it loads under BepInEx (after Reactor) and logs, proving
-// the toolchain builds and the plugin is discovered on this Among Us build.
-[BepInAutoPlugin("com.amongus25.gamewatcher")]
+// Phase-1 increment: loads under BepInEx (after Reactor), reads config, and registers the
+// /ranked chat command (see ChatCommandPatch).
+[BepInPlugin(Id, "GameWatcher Ranked", Version)]
 [BepInProcess("Among Us.exe")]
 [BepInDependency(ReactorPlugin.Id)]
-public partial class GameWatcherPlugin : BasePlugin
+public class GameWatcherPlugin : BasePlugin
 {
+    public const string Id = "com.amongus25.gamewatcher";
+    public const string Version = "0.1.0";
+
     public Harmony Harmony { get; } = new(Id);
+    public static PluginConfig Settings { get; private set; }
 
     public override void Load()
     {
-        Log.LogInfo($"GameWatcher ranked mod loaded ({Id} v{Version})");
+        Settings = new PluginConfig(Config);
+        RankedState.Enabled = Settings.RankedEnabled.Value;
+        Log.LogInfo($"GameWatcher ranked mod loaded ({Id} v{Version}); ranked default = {RankedState.Enabled}");
         Harmony.PatchAll();
     }
 }

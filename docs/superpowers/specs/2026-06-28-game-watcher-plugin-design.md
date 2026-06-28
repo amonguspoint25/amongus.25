@@ -86,8 +86,14 @@ server-side arm/disarm toggle; ranked eligibility comes from a valid host key.
 `RankedGate != Disabled`. Only while ranked-active do the pre-start gate, the timer, and
 recording apply; otherwise the mod is **dormant** (HUD `OFF`, no gate/timer/recording) and
 the host plays a normal game. To play casually on a ranked rig, the host flips `RankedEnabled`
-off (a hotkey) or clears the key. This replaces the removed "Start ranked" arm button with a
-purely local switch — no server round-trip to toggle.
+off (via the host-only `/ranked off` lobby-chat command) or clears the key. This replaces the
+removed "Start ranked" arm button with a purely local switch — no server round-trip to toggle.
+
+**`/ranked` chat command (host-only):** the host types `/ranked on` / `/ranked off` in lobby chat
+to flip `RankedEnabled` at runtime (`/ranked` alone reports current state). Only the local player
+(the host) can toggle — other players' `/ranked` is ignored. The mod replies in chat so the whole
+(unmodded) lobby sees the ranked state. The host key remains the auth boundary; `/ranked` is only
+the local intent toggle. The RANKED HUD label stays as the always-on visual indicator.
 
 ## 4. Project layout & build
 
