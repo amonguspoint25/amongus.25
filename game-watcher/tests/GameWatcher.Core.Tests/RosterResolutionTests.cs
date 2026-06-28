@@ -40,5 +40,23 @@ namespace GameWatcher.Core.Tests
             Assert.Equal(new[] { 1, 2 }, unmatched);
             Assert.False(lm.TryGetPlayerId("1", out _));
         }
+
+        [Fact]
+        public async Task Malformed200_blocks_all_and_caches_nothing()
+        {
+            // HTTP 200 with a body that fails JSON parsing hits the catch (JsonException) branch —
+            // the fail-closed safety path that must block ranked, not pass it.
+            var transport = new FakeTransport(_ => new HttpResponse(200, "{ not valid json"));
+            var lm = new LinkManager(transport);
+
+            var unmatched = await lm.ResolveRosterAsync(new[]
+            {
+                new RosterPlayer(1, "x#001"),
+                new RosterPlayer(2, "y#002"),
+            });
+
+            Assert.Equal(new[] { 1, 2 }, unmatched);
+            Assert.False(lm.TryGetPlayerId("1", out _));
+        }
     }
 }

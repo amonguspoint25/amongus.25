@@ -3,6 +3,10 @@ namespace GameWatcher.Core
     // Pure, frame-driven countdown for the ranked task deadline (spec §8). The plugin feeds it
     // real elapsed time via Tick and pauses it during meetings. It decides who wins when the crew
     // runs out of time, so its accounting is unit-tested here, away from the game.
+    //
+    // Start invariant: callers MUST call Reset(durationMs) before calling Tick or Resume.
+    // A freshly constructed timer has RemainingMs = 0 and IsRunning = false; Tick/Resume on a
+    // never-Reset instance will fire expiry immediately (RemainingMs already at zero).
     public sealed class RankedTimer
     {
         public long RemainingMs { get; private set; }
