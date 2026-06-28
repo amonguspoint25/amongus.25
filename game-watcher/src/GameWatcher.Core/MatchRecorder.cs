@@ -16,7 +16,9 @@ namespace GameWatcher.Core
         int TasksDone,
         int TasksTotal,
         bool Survived,
-        int RoundsSurvived);
+        int RoundsSurvived,
+        int? TimeToKillMs,
+        int? TimeToTaskMs);
 
     public sealed record RecordedMatch(
         string MatchCode,
@@ -44,6 +46,8 @@ namespace GameWatcher.Core
             public int TasksTotal;
             public bool Survived = true;
             public int RoundsSurvived;
+            public long? FirstKillAtMs;
+            public long? FirstTaskAtMs;
         }
 
         private readonly Dictionary<string, Tally> _players = new();
@@ -70,9 +74,14 @@ namespace GameWatcher.Core
                     break;
                 case TaskCompleted tc when _players.TryGetValue(tc.InGameId, out var t2):
                     t2.TasksDone++;
+                    t2.FirstTaskAtMs ??= tc.AtMs;
                     break;
                 case PlayerKilled pk:
-                    if (_players.TryGetValue(pk.KillerInGameId, out var killer)) killer.Kills++;
+                    if (_players.TryGetValue(pk.KillerInGameId, out var killer))
+                    {
+                        killer.Kills++;
+                        killer.FirstKillAtMs ??= pk.AtMs;
+                    }
                     if (_players.TryGetValue(pk.VictimInGameId, out var victim)) victim.Survived = false;
                     break;
                 case MeetingEnded me:
@@ -142,10 +151,16 @@ namespace GameWatcher.Core
                     TasksDone: Math.Min(kv.Value.TasksDone, kv.Value.TasksTotal),
                     TasksTotal: kv.Value.TasksTotal,
                     Survived: kv.Value.Survived,
-                    RoundsSurvived: kv.Value.RoundsSurvived))
+                    RoundsSurvived: kv.Value.RoundsSurvived,
+                    TimeToKillMs: ToMs(kv.Value.FirstKillAtMs),
+                    TimeToTaskMs: ToMs(kv.Value.FirstTaskAtMs)))
                 .ToList();
 
             return new RecordedMatch(_matchCode, _map, _startedAt, _endedAt, _outcome, players);
         }
+
+        // Game timestamps fit comfortably in int (ms; a match is minutes); clamp defensively.
+        private static int? ToMs(long? v) =>
+            v is long ms ? (int)System.Math.Min(ms < 0 ? 0 : ms, int.MaxValue) : (int?)null;
     }
 }

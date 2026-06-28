@@ -49,7 +49,9 @@ namespace GameWatcher.Core
                     TasksDone: p.TasksDone,
                     TasksTotal: p.TasksTotal,
                     Survived: p.Survived,
-                    RoundsSurvived: p.RoundsSurvived));
+                    RoundsSurvived: p.RoundsSurvived,
+                    TimeToKillMs: p.TimeToKillMs,
+                    TimeToTaskMs: p.TimeToTaskMs));
             }
 
             // Server requires >=1 IMPOSTOR and >=1 CREW. Pre-check AFTER dropping unlinked

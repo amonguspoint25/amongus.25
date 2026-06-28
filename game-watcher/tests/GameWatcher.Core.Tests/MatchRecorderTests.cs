@@ -140,5 +140,23 @@ namespace GameWatcher.Core.Tests
             Assert.Equal(2, snap.Players.Single(p => p.InGameId == "c1").RoundsSurvived);  // both meetings
             Assert.Equal(1, snap.Players.Single(p => p.InGameId == "c2").RoundsSurvived);  // meeting 1; dead by meeting 2
         }
+
+        [Fact]
+        public void Captures_first_kill_and_first_task_times()
+        {
+            var r = new MatchRecorder();
+            r.Apply(Start());
+            r.Apply(new TasksAssigned("c1", 5));
+            r.Apply(new TaskCompleted("c1", 4200));   // first task time
+            r.Apply(new TaskCompleted("c1", 9000));   // later — ignored for first-task
+            r.Apply(new PlayerKilled("imp", "c2", 12000)); // first kill time
+            r.Apply(new PlayerKilled("imp", "c1", 30000)); // later kill — ignored for first-kill
+            r.Apply(new GameEnded(Outcome.IMP_WIN, DateTimeOffset.Parse("2026-06-27T17:15:00Z")));
+
+            var snap = r.Snapshot();
+            Assert.Equal(12000, snap.Players.Single(p => p.InGameId == "imp").TimeToKillMs);
+            Assert.Equal(4200, snap.Players.Single(p => p.InGameId == "c1").TimeToTaskMs);
+            Assert.Null(snap.Players.Single(p => p.InGameId == "c2").TimeToKillMs); // never killed anyone
+        }
     }
 }
