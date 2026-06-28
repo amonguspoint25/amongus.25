@@ -18,6 +18,9 @@ Write-Host "Ranked site: $baseUrl" -ForegroundColor Cyan
 Write-Host 'Get your host key from the site (/host page), then paste it below.'
 Write-Host ''
 $key = (Read-Host 'Paste host key and press Enter').Trim()
+# A host key (amrk_<base64url>) never contains whitespace. If a paste dragged in trailing text
+# (e.g. the website's old "... copy now" note), keep only the first token so it still validates.
+$key = ($key -split '\s+')[0]
 if (-not $key) {
     Write-Host 'No key entered. Nothing changed.' -ForegroundColor Yellow
     Read-Host 'Press Enter to exit'
