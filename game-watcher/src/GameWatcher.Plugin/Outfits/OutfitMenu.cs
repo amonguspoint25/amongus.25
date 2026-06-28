@@ -5,17 +5,16 @@ using UnityEngine;
 
 namespace GameWatcher.Plugin;
 
-// Outfit preset panel injected into Among Us's own customization screen (PlayerCustomizationMenu).
-// Six slot buttons + a SAVE toggle, CLONED from the menu's native Equip button so they match the
-// game's art exactly. Click a slot to wear it; click SAVE then a slot to store the current look.
-// Clicks are detected in world space (no IL2CPP button-delegate marshaling).
+// Outfit preset panel injected into Among Us's customization screen (PlayerCustomizationMenu). Six
+// slot buttons cloned from the menu's native Equip button. Clicking a slot WEARS it and makes it the
+// active slot; while a slot is active, any cosmetic change you equip auto-saves into it. No save
+// button — the active slot simply mirrors your current look (and the highlight shows which one).
 public static class OutfitMenu
 {
     private static GameObject[] _slots;
-    private static GameObject _saveBtn;
     private static TextMeshPro[] _slotText;
-    private static TextMeshPro _saveText;
-    private static bool _saveMode;
+    private static int _activeSlot = -1;
+    private static OutfitData _lastOutfit;
 
     [HarmonyPatch(typeof(PlayerCustomizationMenu), nameof(PlayerCustomizationMenu.Start))]
     public static class BuildPatch
@@ -28,12 +27,12 @@ public static class OutfitMenu
     }
 
     [HarmonyPatch(typeof(PlayerCustomizationMenu), nameof(PlayerCustomizationMenu.Update))]
-    public static class ClickPatch
+    public static class TickPatch
     {
         public static void Postfix()
         {
-            try { HandleClicks(); Refresh(); }
-            catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[outfit] click: " + e.Message); }
+            try { HandleClicks(); AutoSave(); Refresh(); }
+            catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[outfit] tick: " + e.Message); }
         }
     }
 
@@ -41,21 +40,20 @@ public static class OutfitMenu
     {
         var src = menu.equipButton;
         if (src == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no equipButton to clone"); return; }
-        _saveMode = false;
+        _activeSlot = -1;
+        _lastOutfit = OutfitPresets.Capture();
         _slots = new GameObject[OutfitPresets.SlotCount];
         _slotText = new TextMeshPro[OutfitPresets.SlotCount];
 
         var basePos = src.transform.localPosition;
         GameWatcherPlugin.Logger?.LogInfo($"[outfit] equipButton local={basePos} cam={(Camera.main != null ? Camera.main.name : "null")}");
 
-        // 3x2 grid to the left of the preview; SAVE below it. Coordinates are first-pass guesses —
-        // calibrated against the logged equipButton position after a live look.
+        // 3x2 grid — coordinates are first-pass guesses, calibrated against the logged anchor later.
         for (int i = 0; i < OutfitPresets.SlotCount; i++)
         {
             int col = i % 3, row = i / 3;
             _slots[i] = CloneButton(src, new Vector3(-3.4f + col * 1.15f, 1.3f - row * 0.95f, basePos.z), $"{i + 1}", out _slotText[i]);
         }
-        _saveBtn = CloneButton(src, new Vector3(-2.25f, -0.7f, basePos.z), "SAVE", out _saveText);
         Refresh();
         GameWatcherPlugin.Logger?.LogInfo("[outfit] panel built in customization menu");
     }
@@ -73,18 +71,7 @@ public static class OutfitMenu
         return go;
     }
 
-    private static void Refresh()
-    {
-        if (_slotText == null) return;
-        for (int i = 0; i < _slotText.Length; i++)
-        {
-            if (_slotText[i] == null) continue;
-            // A filled slot shows just its number; an empty one gets a trailing dot.
-            _slotText[i].text = OutfitPresets.IsSet(i) ? $"{i + 1}" : $"{i + 1}·";
-        }
-        if (_saveText != null) _saveText.text = _saveMode ? "PICK" : "SAVE";
-    }
-
+    // Selecting a slot wears it (or, if empty, captures your current look into it) and makes it active.
     private static void HandleClicks()
     {
         if (_slots == null || !Input.GetMouseButtonDown(0)) return;
@@ -92,17 +79,42 @@ public static class OutfitMenu
         if (cam == null) return;
         Vector3 m = cam.ScreenToWorldPoint(Input.mousePosition);
 
-        if (Hit(_saveBtn, m)) { _saveMode = !_saveMode; return; }
         for (int i = 0; i < _slots.Length; i++)
         {
             if (!Hit(_slots[i], m)) continue;
-            if (_saveMode) { OutfitPresets.SaveCurrent(i); _saveMode = false; }
-            else OutfitPresets.Apply(i);
+            _activeSlot = i;
+            if (OutfitPresets.IsSet(i)) OutfitPresets.Apply(i);
+            else OutfitPresets.Store(i, OutfitPresets.Capture()); // empty slot captures current
+            _lastOutfit = OutfitPresets.Capture();
+            GameWatcherPlugin.Logger?.LogInfo($"[outfit] active slot {i + 1}");
             return;
         }
     }
 
-    // World-space AABB hit test against the button's sprite bounds (the game is 2D ortho).
+    // While a slot is active, mirror any equipped change into it.
+    private static void AutoSave()
+    {
+        if (_activeSlot < 0) return;
+        var cur = OutfitPresets.Capture();
+        if (cur == null || cur.SameAs(_lastOutfit)) return;
+        OutfitPresets.Store(_activeSlot, cur);
+        _lastOutfit = cur;
+        GameWatcherPlugin.Logger?.LogInfo($"[outfit] auto-saved slot {_activeSlot + 1}");
+    }
+
+    private static void Refresh()
+    {
+        if (_slotText == null) return;
+        for (int i = 0; i < _slotText.Length; i++)
+        {
+            if (_slotText[i] == null) continue;
+            _slotText[i].text = OutfitPresets.IsSet(i) ? $"{i + 1}" : $"{i + 1}·"; // dot = empty
+            _slotText[i].color = i == _activeSlot ? Color.yellow                  // active (editing)
+                : OutfitPresets.IsSet(i) ? Color.white
+                : new Color(0.55f, 0.55f, 0.55f);                                  // empty
+        }
+    }
+
     private static bool Hit(GameObject go, Vector3 world)
     {
         if (go == null) return false;

@@ -8,6 +8,9 @@ namespace GameWatcher.Plugin;
 public sealed class OutfitData
 {
     public string Hat = "", Skin = "", Visor = "", Pet = "", NamePlate = "";
+
+    public bool SameAs(OutfitData o) =>
+        o != null && Hat == o.Hat && Skin == o.Skin && Visor == o.Visor && Pet == o.Pet && NamePlate == o.NamePlate;
 }
 
 // 6 outfit presets, persisted in the BepInEx config. Capture the local player's current look into a
@@ -29,15 +32,20 @@ public static class OutfitPresets
     // Save the local player's current outfit into a slot and persist it.
     public static bool SaveCurrent(int slot)
     {
-        if (slot < 0 || slot >= SlotCount) return false;
         var o = Capture();
         if (o == null) return false;
+        Store(slot, o);
+        return true;
+    }
+
+    // Store an outfit into a slot and persist it (drives the menu's auto-save).
+    public static void Store(int slot, OutfitData o)
+    {
+        if (slot < 0 || slot >= SlotCount || o == null) return;
         EnsureLoaded();
         _slots[slot] = o;
         var cfg = GameWatcherPlugin.Settings;
         if (cfg != null) cfg.OutfitSlots[slot].Value = Serialize(o); // ConfigFile auto-saves on set
-        GameWatcherPlugin.Logger?.LogInfo($"[outfit] saved slot {slot + 1}");
-        return true;
     }
 
     // Apply a saved slot onto the local player via the cosmetic RPCs.
@@ -55,7 +63,7 @@ public static class OutfitPresets
         return true;
     }
 
-    private static OutfitData? Capture()
+    public static OutfitData? Capture()
     {
         var outfit = PlayerControl.LocalPlayer?.Data?.DefaultOutfit;
         if (outfit == null) return null;
