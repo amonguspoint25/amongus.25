@@ -39,4 +39,10 @@ describe("computePerf", () => {
     const p = computePerf("IMPOSTOR", { kills: 99, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true });
     expect(p).toBeLessThanOrEqual(1);
   });
+  it("rewards an impostor who survives more rounds", () => {
+    const base = { kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true };
+    const few = computePerf("IMPOSTOR", { ...base, roundsSurvived: 0 });
+    const many = computePerf("IMPOSTOR", { ...base, roundsSurvived: 4 });
+    expect(many).toBeGreaterThan(few);
+  });
 });
