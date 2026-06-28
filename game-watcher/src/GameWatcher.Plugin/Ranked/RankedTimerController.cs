@@ -30,7 +30,14 @@ public static class RankedTimerController
         GameWatcherPlugin.Logger?.LogInfo($"[timer] started: {mins} min");
     }
 
-    public static void OnGameEnd() => _active = false;
+    public static void OnGameEnd()
+    {
+        _active = false;
+        // The HUD GameObject dies with the scene; clear the dangling reference so the next game
+        // rebuilds it instead of poking a destroyed object every frame.
+        if (_hud != null) { try { UnityEngine.Object.Destroy(_hud.gameObject); } catch { } }
+        _hud = null;
+    }
 
     public static void OnMeetingStart()
     {
@@ -72,8 +79,13 @@ public static class RankedTimerController
         if (tasksDone) { GameWatcherPlugin.Logger?.LogInfo("[timer] expired but tasks complete - no force"); return; }
         try
         {
-            GameManager.Instance?.RpcEndGame(GameOverReason.ImpostorsByKill, false);
-            GameWatcherPlugin.Logger?.LogInfo("[timer] expired -> force impostor win");
+            var gm = GameManager.Instance;
+            if (gm != null)
+            {
+                gm.RpcEndGame(GameOverReason.ImpostorsByKill, false);
+                GameWatcherPlugin.Logger?.LogInfo("[timer] expired -> force impostor win");
+            }
+            else GameWatcherPlugin.Logger?.LogWarning("[timer] expired but GameManager null - could not force-end");
         }
         catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[timer] force-end failed: " + e.Message); }
     }

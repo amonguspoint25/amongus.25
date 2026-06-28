@@ -15,6 +15,7 @@ public static class GameReader
     private static DateTimeOffset _start;
     private static bool _recording;
     private static string _code;
+    private static int _seq;  // monotonic suffix so two games can never collide on the same match code
 
     private static long AtMs() => (long)(DateTimeOffset.UtcNow - _start).TotalMilliseconds;
     private static bool Active => GameWatcherPlugin.Host != null && GameWatcherPlugin.Host.RankedActive;
@@ -97,9 +98,10 @@ public static class GameReader
             if (states != null)
                 for (int i = 0; i < states.Length; i++)
                 {
+                    int voter = states[i].VoterId;
                     int votedFor = states[i].VotedForId;         // special values (253 skip, 254 none) are >= 250
-                    if (votedFor >= 0 && votedFor < 250 && PlayerById((byte)votedFor) != null)
-                        votes.Add(new VoteCast(states[i].VoterId.ToString(), votedFor.ToString()));
+                    if (voter >= 0 && voter < 250 && votedFor >= 0 && votedFor < 250 && PlayerById((byte)votedFor) != null)
+                        votes.Add(new VoteCast(voter.ToString(), votedFor.ToString()));
                 }
             Emit(new MeetingEnded(ejected, votes));
             RankedTimerController.OnMeetingEnd();
@@ -176,6 +178,8 @@ public static class GameReader
     {
         int g = 0;
         try { g = AmongUsClient.Instance.GameId; } catch { }
-        return "AU-" + g + "-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // ms precision + a per-session sequence so a GameId=0 fallback (or two games in one second)
+        // can never produce a duplicate code that the dedup queue would silently drop.
+        return $"AU-{g}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}-{++_seq}";
     }
 }

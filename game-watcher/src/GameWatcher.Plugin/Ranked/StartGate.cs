@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GameWatcher.Core;
 using HarmonyLib;
@@ -63,20 +64,31 @@ public static class StartGate
             var host = GameWatcherPlugin.Host;
             if (host == null || !host.RankedActive) return true; // not ranked-active -> normal start
 
-            // 1) Everyone linked? (async gate verdict)
-            if (host.Verdict != 1)
+            try
             {
-                Block(host.Verdict == 2
-                    ? "Ranked blocked - not linked: " + host.BlockedNames
-                    : "Ranked: checking links, press Start again");
+                // Snapshot the verdict once — a background thread can change it between reads.
+                int verdict = host.Verdict;
+                if (verdict != 1)
+                {
+                    Block(verdict == 2
+                        ? "Ranked blocked - not linked: " + host.BlockedNames
+                        : "Ranked: checking links, press Start again");
+                    return false;
+                }
+
+                // Min linked players + settings preset (synchronous reads).
+                var reason = RankedSettings.Check(CountLinked());
+                if (reason != null) { Block("Ranked blocked - " + reason); return false; }
+
+                return true; // all good -> start
+            }
+            catch (Exception e)
+            {
+                // Fail safe: a Harmony prefix must never crash the game. Block the start, don't throw.
+                GameWatcherPlugin.Logger?.LogWarning("[gate] prefix failed: " + e.Message);
+                try { Block("Ranked: error checking lobby, try again"); } catch { }
                 return false;
             }
-
-            // 2) Min linked players + settings preset (synchronous reads).
-            var reason = RankedSettings.Check(CountLinked());
-            if (reason != null) { Block("Ranked blocked - " + reason); return false; }
-
-            return true; // all good -> start
         }
 
         private static int CountLinked()

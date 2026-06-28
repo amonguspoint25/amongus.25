@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -23,6 +24,7 @@ public static class OutfitMenu
     private static GameObject _clearBtn;
     private static int _activeSlot = -1;
     private static OutfitData _lastOutfit;
+    private static readonly List<GameObject> _created = new(); // everything we spawned, for cleanup on rebuild
 
     [HarmonyPatch(typeof(PlayerCustomizationMenu), nameof(PlayerCustomizationMenu.Start))]
     public static class BuildPatch
@@ -48,6 +50,9 @@ public static class OutfitMenu
     {
         var anchor = menu.equipButton;
         if (anchor == null || OutfitAssets.Outline == null) { GameWatcherPlugin.Logger?.LogWarning("[outfit] no anchor/outline"); return; }
+        // Destroy anything from a previous menu open so panels don't stack / duplicate click targets.
+        foreach (var go in _created) if (go != null) UnityEngine.Object.Destroy(go);
+        _created.Clear();
         _activeSlot = -1;
         _lastOutfit = OutfitPresets.Capture();
         int n = OutfitPresets.SlotCount;
@@ -98,6 +103,7 @@ public static class OutfitMenu
         if (mat != null) sr.sharedMaterial = mat; // CRITICAL in IL2CPP, else invisible
         sr.sortingLayerID = layer;
         sr.sortingOrder = order;
+        _created.Add(go);
         return go;
     }
 
@@ -116,6 +122,7 @@ public static class OutfitMenu
         var r = t.GetComponent<Renderer>();
         if (r != null) r.sortingOrder = order;
         t.gameObject.SetActive(true);
+        _created.Add(t.gameObject);
         return t;
     }
 

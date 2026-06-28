@@ -40,9 +40,11 @@ namespace GameWatcher.Core.Http
             {
                 return new HttpResponse(0, string.Empty);
             }
-            catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                // Timeout (not caller cancellation) — treat as transient/no-response.
+                // Timeout / body-read cancellation that is NOT caller-requested — treat as transient.
+                // Catches the base class so OperationCanceledException from ReadAsStringAsync can't
+                // escape the seam (TaskCanceledException is a subclass, so timeouts are still covered).
                 return new HttpResponse(0, string.Empty);
             }
         }

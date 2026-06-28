@@ -45,9 +45,12 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
         seasonByPlayer.set(player.id, await getOrCreatePlayerSeason(tx, player.id, season));
       }
 
-      // Averages come from SEASON ratings — the competitive ladder for this match.
-      const crewAvg = avg(rows.filter((r) => r.p.role === "CREW").map((r) => seasonByPlayer.get(r.player.id)!.crewElo));
-      const impAvg = avg(rows.filter((r) => r.p.role === "IMPOSTOR").map((r) => seasonByPlayer.get(r.player.id)!.impElo));
+      // Averages come from SEASON ratings — the competitive ladder for this match. Exclude
+      // disconnected players so a leaver's rating never skews anyone else's delta (matches the
+      // "disconnected players don't affect others" contract). If a whole role is all-disconnected,
+      // avg([]) falls back to the neutral 1000.
+      const crewAvg = avg(rows.filter((r) => r.p.role === "CREW" && !r.p.disconnected).map((r) => seasonByPlayer.get(r.player.id)!.crewElo));
+      const impAvg = avg(rows.filter((r) => r.p.role === "IMPOSTOR" && !r.p.disconnected).map((r) => seasonByPlayer.get(r.player.id)!.impElo));
 
       const match = await tx.match.create({
         data: {

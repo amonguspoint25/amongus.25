@@ -17,6 +17,13 @@ public static class DebugInjector
 
     public static void Postfix()
     {
+        // Runs every frame inside a Harmony patch — must never let an Il2Cpp hiccup crash the game.
+        try { Run(); }
+        catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[inject] postfix failed: " + e.Message); }
+    }
+
+    private static void Run()
+    {
         RankedTimerController.Tick(); // pump the task timer every frame (no-op when not in a ranked game)
 
         var host = GameWatcherPlugin.Host;
