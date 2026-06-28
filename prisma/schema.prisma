@@ -119,6 +119,7 @@ model MatchParticipant {
   timeToTaskMs   Int?
   timeToKillMs   Int?
   survived       Boolean @default(true)
+  roundsSurvived Int     @default(0)
   eloBefore      Float
   eloAfter       Float
   eloDelta       Float
