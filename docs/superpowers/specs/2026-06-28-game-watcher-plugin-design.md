@@ -236,13 +236,13 @@ brain already receives.
 |---|---|
 | Brain — `MatchRecorder` | on each `MeetingEnded`, for every still-alive non-ejected player, `roundsSurvived++` (alive tracked from `PlayerKilled` + prior ejections, as `survived` already is) |
 | Brain — `Wire.Participant` + `GameWatcherJson` | add `RoundsSurvived` (int) → serializes as `roundsSurvived` |
-| Website — ingest zod (`schema.ts`) | `roundsSurvived: z.number().int().min(0).default(0)` (back-compat: omitted → 0) |
+| Website — ingest zod (`schema.ts`) | `roundsSurvived: z.number().int().min(0).optional()` — consumers read `?? 0`; DB column carries `@default(0)` (back-compat: omitted → 0) |
 | Website — Prisma | `MatchParticipant.roundsSurvived Int @default(0)` + one migration |
 | Website — `perf.ts` | `PerfStats` gains `roundsSurvived`; **owner authors the impostor weighting** |
 | Website — `processMatch.ts` | pass `roundsSurvived` into `computePerf` |
 | Tests | brain xUnit (ejected-at-meeting-2 → 1; never-ejected → all meetings); website vitest (perf, processMatch, schema default) |
 
-The `default(0)` on both the zod field and the Prisma column keeps this additive — existing
+The Prisma column's `@default(0)` (with the zod field `.optional()`, consumers `?? 0`) keeps this additive — existing
 seed data, the 59 brain tests, and already-sent matches all still validate (scoring 0).
 
 **`computePerf` — owner contribution (learning mode).** The impostor weighting is a real
@@ -323,7 +323,7 @@ clamped ±1) is skill nuance.
 
 ## 16. Website changes summary
 
-1. `src/lib/ingest/schema.ts` — add `roundsSurvived` (default 0).
+1. `src/lib/ingest/schema.ts` — add `roundsSurvived` as `.optional()` (consumers `?? 0`; DB column `@default(0)`).
 2. `prisma/schema.prisma` + migration — `MatchParticipant.roundsSurvived Int @default(0)`.
 3. `src/lib/elo/perf.ts` — `PerfStats.roundsSurvived`; owner-authored impostor weighting; wire time-to-* (already present).
 4. `src/lib/ingest/processMatch.ts` — pass `roundsSurvived` into `computePerf`; ensure `eloDelta` is returned.
@@ -368,7 +368,7 @@ they already provide what the mod needs.)
 - **Approach A** — Reactor-based thin reader + background pump + F9 debug injector.
 - **x86 / net6.0 plugin**, `AmongUs.GameLibs.Steam` compile-time refs, ProjectReference → Core.
 - **No new hook for `roundsSurvived`** — derived in the brain from existing events.
-- **`roundsSurvived` is a count** (not a boolean), additive end-to-end with `default(0)`.
+- **`roundsSurvived` is a count** (not a boolean), additive end-to-end. The **ingest zod field is `.optional()`** (consumers `?? 0`, DB column `@default(0)`) rather than `.default(0)` — behaviorally identical for present values, and it avoids forcing the field into every existing typed payload literal. (Reconciled from the original `.default(0)` so doc and code agree.)
 - **18-min timer pauses in meetings; expiry → IMP_WIN if tasks incomplete.**
 - **Timer math lives in Core (pure, tested)** because it decides who wins.
 - **Hard all-linked gate via `/api/lobby/roster`**; ranked requires friend-code registration;
