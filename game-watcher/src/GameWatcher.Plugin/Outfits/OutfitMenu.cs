@@ -169,16 +169,17 @@ public static class OutfitMenu
         return world.x >= b.min.x && world.x <= b.max.x && world.y >= b.min.y && world.y <= b.max.y;
     }
 
+    // Anchor BOTH frames and labels to itemName's sorting layer (the menu foreground the labels
+    // already render on), bumped well above the menu content so the frames sit on top.
     private static int BaseOrder(PlayerCustomizationMenu menu)
     {
         var r = menu.itemName != null ? menu.itemName.GetComponent<Renderer>() : null;
-        if (r == null) r = menu.equipButton != null ? menu.equipButton.GetComponentInChildren<SpriteRenderer>() : null;
-        return r != null ? r.sortingOrder + 1 : 60;
+        return (r != null ? r.sortingOrder : 10) + 50;
     }
 
     private static int BaseLayer(PlayerCustomizationMenu menu)
     {
-        var sr = menu.equipButton != null ? menu.equipButton.GetComponentInChildren<SpriteRenderer>() : null;
-        return sr != null ? sr.sortingLayerID : 0;
+        var r = menu.itemName != null ? menu.itemName.GetComponent<Renderer>() : null;
+        return r != null ? r.sortingLayerID : 0;
     }
 }
