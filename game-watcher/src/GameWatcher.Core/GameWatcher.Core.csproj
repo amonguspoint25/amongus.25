@@ -11,7 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="10.0.9" />
+    <!-- 6.0.x to match the System.Text.Json that BepInEx's bundled .NET 6 runtime provides in-box
+         (FileVersion 6.0.722). A higher reference (e.g. 10.x) cannot bind down to it at runtime and
+         throws when the plugin serializes. net10 test runs roll forward to the in-box 10.x fine. -->
+    <PackageReference Include="System.Text.Json" Version="6.0.10" />
   </ItemGroup>
 
 </Project>

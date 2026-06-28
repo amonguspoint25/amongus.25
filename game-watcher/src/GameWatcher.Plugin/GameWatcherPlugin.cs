@@ -1,4 +1,5 @@
 using BepInEx;
+using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Reactor;
@@ -19,9 +20,11 @@ public class GameWatcherPlugin : BasePlugin
     public Harmony Harmony { get; } = new(Id);
     public static PluginConfig Settings { get; private set; }
     public static BrainHost Host { get; private set; }
+    public static ManualLogSource Logger { get; private set; }
 
     public override void Load()
     {
+        Logger = Log;
         Settings = new PluginConfig(Config);
         RankedState.Enabled = Settings.RankedEnabled.Value;
         Host = new BrainHost(Settings);
