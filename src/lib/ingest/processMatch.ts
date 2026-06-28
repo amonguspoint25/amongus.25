@@ -65,6 +65,34 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
         const ps = seasonByPlayer.get(player.id)!;
         const isImp = p.role === "IMPOSTOR";
         const rating = isImp ? ps.impElo : ps.crewElo;
+
+        // Disconnected player: recorded in the match for history, but ELO is nullified (no gain/loss)
+        // and the game does NOT count toward their stats. Everyone else still scores normally.
+        if (p.disconnected) {
+          await tx.matchParticipant.create({
+            data: {
+              matchId: match.id,
+              playerId: player.id,
+              role: p.role,
+              won: p.won,
+              kills: p.kills,
+              correctShots: p.correctShots,
+              incorrectShots: p.incorrectShots,
+              tasksDone: p.tasksDone,
+              tasksTotal: p.tasksTotal,
+              timeToTaskMs: p.timeToTaskMs,
+              timeToKillMs: p.timeToKillMs,
+              survived: p.survived,
+              roundsSurvived: p.roundsSurvived ?? 0,
+              eloBefore: rating,
+              eloAfter: rating,
+              eloDelta: 0,
+            },
+          });
+          results.push({ playerId: player.id, role: p.role, eloBefore: rating, eloAfter: rating, eloDelta: 0 });
+          continue;
+        }
+
         const opponentAvg = isImp ? crewAvg : impAvg;
         const perf = computePerf(p.role, p);
         const roleGames = isImp ? ps.impGames : ps.crewGames; // per-season placement

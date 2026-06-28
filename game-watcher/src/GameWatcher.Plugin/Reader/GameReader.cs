@@ -108,17 +108,19 @@ public static class GameReader
             for (int i = 0; i < all.Count; i++)
             {
                 var pc = all[i];
-                if (pc == null || pc.Data == null || pc.Data.Tasks == null) continue;
+                if (pc == null || pc.Data == null) continue;
+                if (pc.Data.Disconnected) Emit(new PlayerLeft(pc.PlayerId.ToString())); // nullifies their ELO
                 var tasks = pc.Data.Tasks;
+                if (tasks == null) continue;
                 for (int t = 0; t < tasks.Count; t++)
                     if (tasks[t] != null && tasks[t].Complete)
                         Emit(new TaskCompleted(pc.PlayerId.ToString(), AtMs()));
             }
 
             var reason = endGameResult != null ? endGameResult.GameOverReason : default;
-            bool crewWin = reason.ToString().StartsWith("Humans"); // Humans* = crew win, Impostor* = imp win
-            Emit(new GameEnded(crewWin ? Outcome.CREW_WIN : Outcome.IMP_WIN, DateTimeOffset.UtcNow));
-            GameWatcherPlugin.Logger?.LogInfo($"[reader] end {_code}: reason={reason} -> {(crewWin ? "CREW" : "IMP")}");
+            var outcome = MapOutcome(reason);
+            Emit(new GameEnded(outcome, DateTimeOffset.UtcNow));
+            GameWatcherPlugin.Logger?.LogInfo($"[reader] end {_code}: reason={reason} -> {outcome}");
         }
     }
 
@@ -128,6 +130,15 @@ public static class GameReader
         for (int i = 0; i < all.Count; i++)
             if (all[i] != null && all[i].PlayerId == id) return all[i];
         return null;
+    }
+
+    // Disconnect reasons name WHO LEFT, not who won: an impostor leaving = crew win, and vice versa.
+    private static Outcome MapOutcome(GameOverReason reason)
+    {
+        string s = reason.ToString();
+        if (s == "ImpostorDisconnect") return Outcome.CREW_WIN;
+        if (s == "HumansDisconnect") return Outcome.IMP_WIN;
+        return s.StartsWith("Humans") ? Outcome.CREW_WIN : Outcome.IMP_WIN;
     }
 
     private static string MapName()

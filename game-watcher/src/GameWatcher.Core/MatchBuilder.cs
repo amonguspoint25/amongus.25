@@ -51,7 +51,8 @@ namespace GameWatcher.Core
                     Survived: p.Survived,
                     RoundsSurvived: p.RoundsSurvived,
                     TimeToKillMs: p.TimeToKillMs,
-                    TimeToTaskMs: p.TimeToTaskMs));
+                    TimeToTaskMs: p.TimeToTaskMs,
+                    Disconnected: p.Disconnected));
             }
 
             // Server requires >=1 IMPOSTOR and >=1 CREW. Pre-check AFTER dropping unlinked

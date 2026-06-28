@@ -23,6 +23,10 @@ namespace GameWatcher.Core.Domain
 
     public sealed record TaskCompleted(string InGameId, long AtMs) : GameEvent;
 
+    // A player disconnected before the game ended. Their ELO is nullified (no gain/loss) but the
+    // match still counts for everyone else.
+    public sealed record PlayerLeft(string InGameId) : GameEvent;
+
     public sealed record VoteCast(string VoterInGameId, string? TargetInGameId);
 
     public sealed record MeetingEnded(string? EjectedInGameId, IReadOnlyList<VoteCast> Votes) : GameEvent;

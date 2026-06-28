@@ -18,7 +18,8 @@ namespace GameWatcher.Core
         bool Survived,
         int RoundsSurvived,
         int? TimeToKillMs,
-        int? TimeToTaskMs);
+        int? TimeToTaskMs,
+        bool Disconnected = false);
 
     public sealed record RecordedMatch(
         string MatchCode,
@@ -51,6 +52,7 @@ namespace GameWatcher.Core
         }
 
         private readonly Dictionary<string, Tally> _players = new();
+        private readonly HashSet<string> _disconnected = new();
         private string? _matchCode;
         private string? _map;
         private DateTimeOffset _startedAt;
@@ -75,6 +77,9 @@ namespace GameWatcher.Core
                 case TaskCompleted tc when _players.TryGetValue(tc.InGameId, out var t2):
                     t2.TasksDone++;
                     t2.FirstTaskAtMs ??= tc.AtMs;
+                    break;
+                case PlayerLeft pl when _players.ContainsKey(pl.InGameId):
+                    _disconnected.Add(pl.InGameId);
                     break;
                 case PlayerKilled pk:
                     if (_players.TryGetValue(pk.KillerInGameId, out var killer))
@@ -123,6 +128,7 @@ namespace GameWatcher.Core
         private void Reset(GameStarted gs)
         {
             _players.Clear();
+            _disconnected.Clear();
             _matchCode = gs.MatchCode;
             _map = gs.Map;
             _startedAt = gs.StartedAt;
@@ -153,7 +159,8 @@ namespace GameWatcher.Core
                     Survived: kv.Value.Survived,
                     RoundsSurvived: kv.Value.RoundsSurvived,
                     TimeToKillMs: ToMs(kv.Value.FirstKillAtMs),
-                    TimeToTaskMs: ToMs(kv.Value.FirstTaskAtMs)))
+                    TimeToTaskMs: ToMs(kv.Value.FirstTaskAtMs),
+                    Disconnected: _disconnected.Contains(kv.Key)))
                 .ToList();
 
             return new RecordedMatch(_matchCode, _map, _startedAt, _endedAt, _outcome, players);

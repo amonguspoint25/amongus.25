@@ -13,6 +13,9 @@ export const participantSchema = z.object({
   timeToTaskMs: z.number().int().min(0).optional(),
   survived: z.boolean().default(true),
   roundsSurvived: z.number().int().min(0).optional(),
+  // Player disconnected before the game ended: still recorded, but their ELO is nullified
+  // (no gain/loss) and they don't affect anyone else's rating change.
+  disconnected: z.boolean().default(false),
 });
 
 export const matchPayloadSchema = z

@@ -17,6 +17,21 @@ namespace GameWatcher.Core.Tests
             });
 
         [Fact]
+        public void PlayerLeft_marks_only_that_player_disconnected()
+        {
+            var r = new MatchRecorder();
+            r.Apply(Start());
+            r.Apply(new PlayerLeft("c1"));
+            r.Apply(new PlayerLeft("ghost"));   // unknown id -> ignored (roster is authoritative)
+            r.Apply(new GameEnded(Outcome.IMP_WIN, DateTimeOffset.Parse("2026-06-27T17:10:00Z")));
+
+            var snap = r.Snapshot();
+            Assert.True(snap.Players.Single(p => p.InGameId == "c1").Disconnected);
+            Assert.False(snap.Players.Single(p => p.InGameId == "c2").Disconnected);
+            Assert.False(snap.Players.Single(p => p.InGameId == "imp").Disconnected);
+        }
+
+        [Fact]
         public void Records_kills_survival_tasks_and_shots()
         {
             var r = new MatchRecorder();

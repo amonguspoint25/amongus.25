@@ -25,5 +25,6 @@ namespace GameWatcher.Core.Domain
         bool Survived,
         int RoundsSurvived = 0,      // count of meeting rounds alive-and-not-ejected (spec §10)
         int? TimeToKillMs = null,    // DEFERRED no longer — derived by the recorder (Task 3)
-        int? TimeToTaskMs = null);
+        int? TimeToTaskMs = null,
+        bool Disconnected = false);  // DC'd before game end — server nullifies their ELO (no gain/loss)
 }

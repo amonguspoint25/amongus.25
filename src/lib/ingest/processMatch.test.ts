@@ -102,6 +102,30 @@ describe("processMatch", () => {
     expect(mp!.roundsSurvived).toBe(3);
   });
 
+  it("nullifies a disconnected player's elo and skips their stats, scoring everyone else normally", async () => {
+    const imp = await makePlayer("imp-dc");
+    const crew = await makePlayer("crew-dc");
+    const res = await processMatch({
+      matchCode: "DC-1", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
+      outcome: "IMP_WIN",
+      participants: [
+        { playerId: imp.id, role: "IMPOSTOR", won: true, kills: 1, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true },
+        { playerId: crew.id, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 5, survived: false, disconnected: true },
+      ],
+    });
+
+    // Disconnected crew: rating untouched, game doesn't count, delta 0.
+    const c = await prisma.player.findUnique({ where: { id: crew.id } });
+    expect(c!.crewElo).toBe(1000);
+    expect(c!.games).toBe(0);
+    expect(res.results.find((r) => r.playerId === crew.id)!.eloDelta).toBe(0);
+
+    // Everyone else still scores normally.
+    const i = await prisma.player.findUnique({ where: { id: imp.id } });
+    expect(i!.impElo).toBeGreaterThan(1000);
+    expect(i!.games).toBe(1);
+  });
+
   it("applies the placement K-factor (64) for a player's first game in a role", async () => {
     const imp = await makePlayer("imp-k");
     const crew = await makePlayer("crew-k");
