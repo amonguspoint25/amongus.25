@@ -29,6 +29,6 @@ public sealed class PluginConfig
         OutfitSlots = new ConfigEntry<string>[OutfitPresets.SlotCount];
         for (int i = 0; i < OutfitSlots.Length; i++)
             OutfitSlots[i] = config.Bind("Outfits", $"Slot{i + 1}", "",
-                $"Saved outfit preset {i + 1} (color|hat|skin|visor|pet|nameplate). Managed by the in-lobby outfit menu.");
+                $"Saved outfit preset {i + 1} (hat|skin|visor|pet|nameplate - color excluded). Managed by the in-lobby outfit menu.");
     }
 }

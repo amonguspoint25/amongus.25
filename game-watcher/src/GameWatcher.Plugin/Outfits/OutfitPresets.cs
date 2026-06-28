@@ -2,10 +2,11 @@ using System;
 
 namespace GameWatcher.Plugin;
 
-// A saved local-player outfit (color + cosmetics). Cosmetic ids are the game's string ids.
+// A saved local-player outfit. Cosmetics only — COLOR is intentionally excluded, since AU forces
+// unique colors and re-applying a saved color would collide with whoever already has it. Ids are the
+// game's cosmetic string ids.
 public sealed class OutfitData
 {
-    public int Color;
     public string Hat = "", Skin = "", Visor = "", Pet = "", NamePlate = "";
 }
 
@@ -45,7 +46,6 @@ public static class OutfitPresets
         var o = Get(slot);
         var lp = PlayerControl.LocalPlayer;
         if (o == null || lp == null) return false;
-        lp.RpcSetColor((byte)o.Color);
         lp.RpcSetHat(o.Hat);
         lp.RpcSetSkin(o.Skin);
         lp.RpcSetVisor(o.Visor);
@@ -61,7 +61,6 @@ public static class OutfitPresets
         if (outfit == null) return null;
         return new OutfitData
         {
-            Color = outfit.ColorId,
             Hat = outfit.HatId ?? "",
             Skin = outfit.SkinId ?? "",
             Visor = outfit.VisorId ?? "",
@@ -80,13 +79,14 @@ public static class OutfitPresets
     }
 
     private static string Serialize(OutfitData o) =>
-        $"{o.Color}|{o.Hat}|{o.Skin}|{o.Visor}|{o.Pet}|{o.NamePlate}";
+        $"{o.Hat}|{o.Skin}|{o.Visor}|{o.Pet}|{o.NamePlate}";
 
     private static OutfitData? Parse(string s)
     {
         if (string.IsNullOrEmpty(s)) return null;
         var p = s.Split('|');
-        if (p.Length < 6 || !int.TryParse(p[0], out var color)) return null;
-        return new OutfitData { Color = color, Hat = p[1], Skin = p[2], Visor = p[3], Pet = p[4], NamePlate = p[5] };
+        int o = (p.Length >= 6 && int.TryParse(p[0], out _)) ? 1 : 0; // tolerate the old color-prefixed format
+        if (p.Length - o < 5) return null;
+        return new OutfitData { Hat = p[o], Skin = p[o + 1], Visor = p[o + 2], Pet = p[o + 3], NamePlate = p[o + 4] };
     }
 }
