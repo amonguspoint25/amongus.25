@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using AmongUs.GameOptions;
 using GameWatcher.Core.Domain;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
@@ -40,7 +41,7 @@ public static class GameReader
                 bool imp = pc.Data.Role != null && pc.Data.Role.IsImpostor;
                 roster.Add(new RosterEntry(pc.PlayerId.ToString(), pc.Data.PlayerName, imp ? Role.IMPOSTOR : Role.CREW));
             }
-            Emit(new GameStarted(_code, "Among Us", _start, roster));
+            Emit(new GameStarted(_code, MapName(), _start, roster));
             for (int i = 0; i < all.Count; i++)
             {
                 var pc = all[i];
@@ -127,6 +128,24 @@ public static class GameReader
         for (int i = 0; i < all.Count; i++)
             if (all[i] != null && all[i].PlayerId == id) return all[i];
         return null;
+    }
+
+    private static string MapName()
+    {
+        try
+        {
+            byte m = GameOptionsManager.Instance.CurrentGameOptions.GetByte(ByteOptionNames.MapId);
+            return m switch
+            {
+                0 => "The Skeld",
+                1 => "Mira HQ",
+                2 => "Polus",
+                4 => "The Airship",
+                5 => "The Fungle",
+                _ => "Map " + m,
+            };
+        }
+        catch { return "Unknown"; }
     }
 
     private static string MatchCode()
