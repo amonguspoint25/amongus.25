@@ -1,3 +1,4 @@
+using GameWatcher.Core;
 using HarmonyLib;
 
 namespace GameWatcher.Plugin;
@@ -22,18 +23,32 @@ public static class ChatCommandPatch
         {
             case "on":
                 RankedState.Enabled = true;
-                Announce("Ranked is now ON for this lobby. Everyone must be linked on the website.");
+                Announce("Ranked is now ON for this lobby. Everyone must be linked on the website. " + SiteLine());
                 break;
             case "off":
                 RankedState.Enabled = false;
                 Announce("Ranked is now OFF.");
                 break;
-            default:
-                Announce(RankedState.Enabled
-                    ? "Ranked: ON  (use /ranked off to disable)"
-                    : "Ranked: OFF  (use /ranked on to enable)");
+            default: // bare "/ranked" or "/ranked status"
+                Announce(StatusLine());
                 break;
         }
+    }
+
+    private static string StatusLine() => $"Ranked: {(RankedState.Enabled ? "ON" : "OFF")}  |  {SiteLine()}";
+
+    // Live host-key validity from the background poll (read-only, no marshaling).
+    private static string SiteLine()
+    {
+        var host = GameWatcherPlugin.Host;
+        if (host == null || !host.HasKey) return "no host key set (BepInEx/config/com.amongus25.gamewatcher.cfg)";
+        if (!host.PolledOnce) return "checking site…";
+        return host.LastStatus switch
+        {
+            RankedStatus.Enabled => "host key valid - ready to record",
+            RankedStatus.Disabled => "host key INVALID or revoked",
+            _ => "site unreachable (check WebsiteBaseUrl)",
+        };
     }
 
     private static void Announce(string message)

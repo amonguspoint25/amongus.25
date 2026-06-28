@@ -18,12 +18,16 @@ public class GameWatcherPlugin : BasePlugin
 
     public Harmony Harmony { get; } = new(Id);
     public static PluginConfig Settings { get; private set; }
+    public static BrainHost Host { get; private set; }
 
     public override void Load()
     {
         Settings = new PluginConfig(Config);
         RankedState.Enabled = Settings.RankedEnabled.Value;
-        Log.LogInfo($"GameWatcher ranked mod loaded ({Id} v{Version}); ranked default = {RankedState.Enabled}");
+        Host = new BrainHost(Settings);
+        Host.Start();
+        Log.LogInfo($"GameWatcher ranked mod loaded ({Id} v{Version}); ranked default = {RankedState.Enabled}; " +
+                    $"hostKey set = {Host.HasKey}");
         Harmony.PatchAll();
     }
 }
