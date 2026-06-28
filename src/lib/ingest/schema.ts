@@ -12,6 +12,7 @@ export const participantSchema = z.object({
   timeToKillMs: z.number().int().min(0).optional(),
   timeToTaskMs: z.number().int().min(0).optional(),
   survived: z.boolean().default(true),
+  roundsSurvived: z.number().int().min(0).optional(),
 });
 
 export const matchPayloadSchema = z

@@ -110,4 +110,19 @@ describe("matchPayloadSchema", () => {
       expect(issues.some((m) => m.includes("CREW"))).toBe(true);
     }
   });
+
+  it("accepts roundsSurvived and rejects a negative value", () => {
+    const withVal = matchPayloadSchema.safeParse({
+      ...validPayload,
+      participants: validPayload.participants.map((p, i) => (i === 0 ? { ...p, roundsSurvived: 3 } : p)),
+    });
+    expect(withVal.success).toBe(true);
+    if (withVal.success) expect(withVal.data.participants[0].roundsSurvived).toBe(3);
+
+    const negative = matchPayloadSchema.safeParse({
+      ...validPayload,
+      participants: validPayload.participants.map((p, i) => (i === 0 ? { ...p, roundsSurvived: -1 } : p)),
+    });
+    expect(negative.success).toBe(false);
+  });
 });
