@@ -6,12 +6,14 @@ using UnityEngine;
 
 namespace GameWatcher.Plugin;
 
-// Dead-player vote tracker: while the LOCAL player is a ghost, show a live, color-coded list of who
-// voted for whom during a meeting. Reads MeetingHud.playerStates each frame. Works fully for the host
-// (which knows every vote target as it tallies them); a non-host only has targets once AU reveals
-// them. Harmless QoL — the dead can't relay it to the living (ghost chat is separate).
+// Ghost meeting helpers (QoL for the dead): while the LOCAL player is a ghost, (1) show a live,
+// color-coded "who voted for whom" list, and (2) paint impostor names red. Both read live game state
+// each frame and work fully for the HOST (which knows every vote target and every role); a non-host
+// only learns vote targets at the reveal and never learns other players' roles. Harmless — the dead
+// can't relay this to the living (ghost chat is separate).
 public static class GhostVoteReveal
 {
+    private static readonly Color ImpRed = new Color(1f, 0.25f, 0.25f);
     private static TextMeshPro _overlay;
 
     [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Update))]
@@ -19,8 +21,26 @@ public static class GhostVoteReveal
     {
         public static void Postfix(MeetingHud __instance)
         {
-            try { Render(__instance); }
+            try { Render(__instance); HighlightImpostors(__instance); }
             catch (Exception e) { GameWatcherPlugin.Logger?.LogWarning("[ghostvote] " + e.Message); }
+        }
+    }
+
+    // Paint impostor names red in the vote list (ghosts only). Only sets red — never overrides the
+    // colour of non-impostors or for living players.
+    private static void HighlightImpostors(MeetingHud hud)
+    {
+        var lp = PlayerControl.LocalPlayer;
+        if (lp == null || lp.Data == null || !lp.Data.IsDead) return; // ghosts only
+        var states = hud != null ? hud.playerStates : null;
+        if (states == null) return;
+        for (int i = 0; i < states.Length; i++)
+        {
+            var a = states[i];
+            if (a == null || a.NameText == null) continue;
+            var pc = PlayerById(a.TargetPlayerId);
+            if (pc != null && pc.Data != null && pc.Data.Role != null && pc.Data.Role.IsImpostor)
+                a.NameText.color = ImpRed;
         }
     }
 
