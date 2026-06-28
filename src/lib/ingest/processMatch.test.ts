@@ -82,6 +82,26 @@ describe("processMatch", () => {
     expect(c!.impGames).toBe(0);
   });
 
+  it("persists roundsSurvived and returns per-player elo deltas", async () => {
+    const imp = await makePlayer("imp-rs");
+    const crew = await makePlayer("crew-rs");
+    const res = await processMatch({
+      matchCode: "RS-1", startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
+      outcome: "IMP_WIN",
+      participants: [
+        { playerId: imp.id, role: "IMPOSTOR", won: true, kills: 2, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true, roundsSurvived: 3 },
+        { playerId: crew.id, role: "CREW", won: false, kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 1, tasksTotal: 5, survived: false, roundsSurvived: 1 },
+      ],
+    });
+
+    expect(res.results).toHaveLength(2);
+    const impResult = res.results.find((r) => r.playerId === imp.id)!;
+    expect(impResult.eloDelta).toBeGreaterThan(0);
+
+    const mp = await prisma.matchParticipant.findFirst({ where: { match: { code: "RS-1" }, role: "IMPOSTOR" } });
+    expect(mp!.roundsSurvived).toBe(3);
+  });
+
   it("applies the placement K-factor (64) for a player's first game in a role", async () => {
     const imp = await makePlayer("imp-k");
     const crew = await makePlayer("crew-k");

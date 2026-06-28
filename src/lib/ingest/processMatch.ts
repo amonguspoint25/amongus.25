@@ -11,10 +11,18 @@ import { getOrCreateActiveSeason, getOrCreatePlayerSeason } from "../season/seas
 // trusts the bearer-authenticated custom server as the source of truth; per-event
 // cryptographic signing belongs to that server's spec (a separate future project).
 
-export async function processMatch(payload: MatchPayload): Promise<{ matchId: string }> {
+export type MatchResult = {
+  playerId: string;
+  role: "CREW" | "IMPOSTOR";
+  eloBefore: number;
+  eloAfter: number;
+  eloDelta: number;
+};
+
+export async function processMatch(payload: MatchPayload): Promise<{ matchId: string; results: MatchResult[] }> {
   // Idempotency: short-circuit if this matchCode was already processed.
   const existing = await prisma.match.findUnique({ where: { code: payload.matchCode } });
-  if (existing) return { matchId: existing.id };
+  if (existing) return { matchId: existing.id, results: [] };
 
   const playerIds = payload.participants.map((p) => p.playerId);
   const players = await prisma.player.findMany({
@@ -51,6 +59,8 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
         },
       });
 
+      const results: MatchResult[] = [];
+
       for (const { p, player } of rows) {
         const ps = seasonByPlayer.get(player.id)!;
         const isImp = p.role === "IMPOSTOR";
@@ -75,11 +85,14 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
             timeToTaskMs: p.timeToTaskMs,
             timeToKillMs: p.timeToKillMs,
             survived: p.survived,
+            roundsSurvived: p.roundsSurvived ?? 0,
             eloBefore: rating,
             eloAfter,
             eloDelta,
           },
         });
+
+        results.push({ playerId: player.id, role: p.role, eloBefore: rating, eloAfter, eloDelta });
 
         // Season rating + per-season counts (the leaderboard for this season).
         const psCrew = isImp ? ps.crewElo : eloAfter;
@@ -123,14 +136,14 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
           },
         });
       }
-      return { matchId: match.id };
+      return { matchId: match.id, results };
     });
   } catch (error) {
     // Handle a race where two concurrent requests both pass the idempotency check
     // and one loses to the unique constraint on Match.code (Prisma error P2002).
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const raced = await prisma.match.findUnique({ where: { code: payload.matchCode } });
-      if (raced) return { matchId: raced.id };
+      if (raced) return { matchId: raced.id, results: [] };
     }
     throw error;
   }
