@@ -13,7 +13,7 @@ public sealed class PluginConfig
 
     public PluginConfig(ConfigFile config)
     {
-        WebsiteBaseUrl = config.Bind("GameWatcher", "WebsiteBaseUrl", "https://your-ranked-site.example",
+        WebsiteBaseUrl = config.Bind("GameWatcher", "WebsiteBaseUrl", "https://au-25.vercel.app",
             "Base URL of the ranked website (no trailing slash).");
         HostKey = config.Bind("GameWatcher", "HostKey", "",
             "Your personal host key from the website /host page. Empty = mod dormant.");
