@@ -154,14 +154,10 @@ public static class GameReader
         return null;
     }
 
-    // Disconnect reasons name WHO LEFT, not who won: an impostor leaving = crew win, and vice versa.
+    // Delegates to the unit-tested mapper in Core. AU renamed crew wins "Humans*" -> "Crewmates*",
+    // so name-prefix matching (not a hardcoded "Humans" check) is what keeps wins from inverting.
     private static Outcome MapOutcome(GameOverReason reason)
-    {
-        string s = reason.ToString();
-        if (s == "ImpostorDisconnect") return Outcome.CREW_WIN;
-        if (s == "HumansDisconnect") return Outcome.IMP_WIN;
-        return s.StartsWith("Humans") ? Outcome.CREW_WIN : Outcome.IMP_WIN;
-    }
+        => OutcomeMapper.FromReasonName(reason.ToString());
 
     private static string MapName()
     {
