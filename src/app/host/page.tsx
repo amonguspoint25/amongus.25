@@ -43,7 +43,7 @@ export default async function HostPage() {
       </p>
 
       <div className="hud-panel hud-corners" style={panel}>
-        <p className="eyebrow mb-2">Ranked mod · v0.1.0</p>
+        <p className="eyebrow mb-2">Ranked mod · v0.2.0</p>
         <p className="data" style={{ color: "var(--muted)", marginBottom: "0.9rem" }}>
           Host-only. Extract into your Among Us folder, launch once, paste your host key, then type{" "}
           <code style={code}>/ranked on</code> in a lobby you host.
@@ -89,6 +89,33 @@ export default async function HostPage() {
         <p className="data" style={{ color: "var(--muted)", fontSize: "0.74rem", marginTop: "0.85rem" }}>
           Only the lobby host needs the mod. Requires the ranked Among Us build everyone plays on.
         </p>
+        <div style={{ marginTop: "1rem", paddingTop: "0.85rem", borderTop: "1px solid var(--line)" }}>
+          <p className="eyebrow mb-2">What&apos;s new · v0.2.0</p>
+          <ul style={{ color: "var(--muted)", fontSize: "0.8rem", margin: 0, paddingLeft: "1.2rem", display: "grid", gap: "0.3rem" }}>
+            <li>Fixed: crew wins were recorded as impostor wins — ELO is now correct.</li>
+            <li>Match uploads retry automatically and survive a restart.</li>
+            <li>Anonymous Votes must be ON (powers the ghost vote reveal).</li>
+            <li>Clearer in-lobby message when a setting blocks ranked start.</li>
+            <li>Website: harder ELO ladder + new tiers (Wood, Iron, Mastermind).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="hud-panel hud-corners" style={panel}>
+        <p className="eyebrow mb-2">Required lobby settings</p>
+        <p className="data" style={{ color: "var(--muted)", marginBottom: "0.7rem", fontSize: "0.82rem" }}>
+          Ranked won&apos;t start until the lobby matches this preset — the mod chats which one to fix.
+        </p>
+        <ul style={{ color: "var(--muted)", fontSize: "0.8rem", margin: 0, paddingLeft: "1.2rem", display: "grid", gap: "0.3rem" }}>
+          <li>Map <strong>Polus</strong> · <strong>2</strong> impostors · Classic mode</li>
+          <li>All roles <strong>OFF</strong></li>
+          <li>Player speed <strong>1.25</strong> · Crew vision <strong>0.25</strong> · Impostor vision <strong>1.75</strong></li>
+          <li>Kill cooldown <strong>22.5</strong> · Kill distance <strong>Short</strong></li>
+          <li>Emergency meetings <strong>1</strong> · cooldown <strong>20</strong> · discussion <strong>0</strong> · voting <strong>150</strong></li>
+          <li>Tasks <strong>2 / 3 / 5</strong> (common/long/short) · Visual tasks <strong>OFF</strong> · Task bar <strong>Never</strong></li>
+          <li>Anonymous Votes <strong>ON</strong> · Confirm Ejects <strong>OFF</strong></li>
+          <li><strong>10</strong> linked players minimum</li>
+        </ul>
       </div>
 
       <div className="hud-panel hud-corners" style={panel}>

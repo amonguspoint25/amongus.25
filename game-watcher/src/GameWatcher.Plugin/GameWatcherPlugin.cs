@@ -15,7 +15,7 @@ namespace GameWatcher.Plugin;
 public class GameWatcherPlugin : BasePlugin
 {
     public const string Id = "com.amongus25.gamewatcher";
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     public Harmony Harmony { get; } = new(Id);
     public static PluginConfig Settings { get; private set; }
