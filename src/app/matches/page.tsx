@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MatchesPage() {
   const matches = await prisma.match.findMany({
+    where: { voided: false },
     orderBy: { startedAt: "desc" },
     take: 25,
     select: {

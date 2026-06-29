@@ -99,6 +99,8 @@ model Match {
   tournamentId String?
   season       Season?            @relation(fields: [seasonId], references: [id])
   seasonId     String?
+  voided       Boolean            @default(false)
+  voidedAt     DateTime?
   participants MatchParticipant[]
   createdAt    DateTime           @default(now())
 }
@@ -120,6 +122,7 @@ model MatchParticipant {
   timeToKillMs   Int?
   survived       Boolean @default(true)
   roundsSurvived Int     @default(0)
+  disconnected   Boolean @default(false)
   eloBefore      Float
   eloAfter       Float
   eloDelta       Float

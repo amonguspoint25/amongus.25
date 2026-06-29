@@ -19,6 +19,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       where: { id },
       include: {
         participants: {
+          where: { match: { voided: false } },
           include: { match: true },
           orderBy: { match: { startedAt: "desc" } },
           take: 10,
@@ -26,7 +27,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       },
     }),
     prisma.matchParticipant.findMany({
-      where: { playerId: id },
+      where: { playerId: id, match: { voided: false } },
       orderBy: { match: { startedAt: "asc" } },
       take: 30,
       select: { eloAfter: true },

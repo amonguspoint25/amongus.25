@@ -75,6 +75,7 @@ export default async function AdminPage({
           <Link href="/admin/seasons" className="btn-ghost" style={ghost}>SEASONS</Link>
           <Link href="/admin/tournaments" className="btn-ghost" style={ghost}>TOURNAMENTS</Link>
           <Link href="/admin/hosts" className="btn-ghost" style={ghost}>HOSTS</Link>
+          <Link href="/admin/matches" className="btn-ghost" style={ghost}>MATCHES</Link>
         </div>
       </div>
 
