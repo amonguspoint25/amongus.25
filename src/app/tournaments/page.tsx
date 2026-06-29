@@ -2,13 +2,13 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 export const metadata = { title: "Tournaments — Among Us .25 Ranked" };
-// Queries the DB on render, so it must not be prerendered at build.
-export const dynamic = "force-dynamic";
+// ISR: CDN-cache 60s (tournaments change rarely) — DDoS shield for this public list.
+export const revalidate = 60;
 
 const BTN_CLIP = "polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%)";
 
 export default async function Page() {
-  const ts = await prisma.tournament.findMany({ orderBy: { createdAt: "desc" } });
+  const ts = await prisma.tournament.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
   return (
     <main className="max-w-4xl mx-auto p-8">
       <p className="eyebrow mb-1">// BRACKET CONTROL</p>

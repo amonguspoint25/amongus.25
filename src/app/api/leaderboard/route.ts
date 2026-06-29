@@ -39,5 +39,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(partitionProvisional(rows, sort));
+  // Edge-cache so the site (15s poll) + Discord bot can't turn a flood into a DB-load attack:
+  // Vercel serves this from the CDN for 20s and stale-while-revalidate for 60s, so at most one
+  // DB hit per ~20s per query variant regardless of request volume. The live Discord board reads
+  // the DB directly (not this route), so its freshness is unaffected.
+  return NextResponse.json(partitionProvisional(rows, sort), {
+    headers: { "Cache-Control": "public, s-maxage=20, stale-while-revalidate=60" },
+  });
 }

@@ -6,9 +6,9 @@ import { CountUp } from "@/components/CountUp";
 import { Sparkline } from "@/components/Sparkline";
 import { TiltCard } from "@/components/TiltCard";
 
-// Render per-request like every sibling DB page so a freshly-ingested match shows the player's
-// updated ELO / recent matches / sparkline immediately (without this, Next caches the route).
-export const dynamic = "force-dynamic";
+// ISR: CDN-cache 30s (DDoS shield — random-id floods can't hammer the DB uncached). A real match
+// calls revalidatePath(`/players/${id}`) from ingest, so the player's ELO still updates instantly.
+export const revalidate = 30;
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -9,8 +9,9 @@ import { TiltCard } from "@/components/TiltCard";
 import { Magnetic } from "@/components/Magnetic";
 import type { ReactNode } from "react";
 
-// Renders per-request (queries the DB), so it must not be prerendered at build.
-export const dynamic = "force-dynamic";
+// ISR: CDN-cache 30s (DDoS shield — a flood is served from cache instead of the home page's 4
+// queries incl. 2 count scans). Ingest revalidatePath("/") refreshes it on a new match.
+export const revalidate = 30;
 
 export default async function Home() {
   const [topPlayers, tournaments, playerCount, matchCount] = await Promise.all([

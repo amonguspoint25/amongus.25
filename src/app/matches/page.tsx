@@ -2,7 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 
 export const metadata = { title: "Matches — Among Us .25 Ranked" };
-export const dynamic = "force-dynamic";
+// CDN-cache the public match list (DDoS shield) — a flood is served from cache, not Neon. Void/
+// ingest still surface within ~30s, and revalidatePath("/matches") busts it on demand.
+export const revalidate = 30;
 
 export default async function MatchesPage() {
   const matches = await prisma.match.findMany({

@@ -37,8 +37,14 @@ export async function resolveHostKey(authHeader: string | null): Promise<HostKey
   if (!raw) return null;
   const key = await prisma.hostKey.findUnique({ where: { tokenHash: hashToken(raw) } });
   if (!key || key.revokedAt) return null;
-  // Return the UPDATED row so callers see the fresh lastUsedAt.
-  return prisma.hostKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date() } });
+  // Only write lastUsedAt when it's gone stale (>60s). Keeps a DB WRITE off the hottest path — the
+  // mod heartbeat (GET /api/host/status) and every ingest — so a key polling in a loop can't drive
+  // unbounded writes. When fresh, return the row as-is (callers don't need exact lastUsedAt).
+  const STALE_MS = 60_000;
+  if (!key.lastUsedAt || Date.now() - key.lastUsedAt.getTime() > STALE_MS) {
+    return prisma.hostKey.update({ where: { id: key.id }, data: { lastUsedAt: new Date() } });
+  }
+  return key;
 }
 
 export async function revokeHostKey(id: string): Promise<void> {

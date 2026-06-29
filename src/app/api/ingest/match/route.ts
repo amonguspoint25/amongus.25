@@ -5,6 +5,7 @@ import { processMatch } from "@/lib/ingest/processMatch";
 import { announceMatch } from "@/lib/discord/announce";
 import { matchAnnounceEmbed } from "@/lib/discord/embeds";
 import { refreshBoard } from "@/lib/discord/board";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
   if (!(await authorizeIngest(req.headers.get("authorization")))) {
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
     // Announce the match AND refresh the live leaderboard — concurrent, both bounded + best-effort,
     // so neither can stall or break the ingest response.
     await Promise.allSettled([announceMatch(embed), refreshBoard()]);
+
+    // Bust the ISR caches so a real match surfaces immediately despite the page TTLs.
+    revalidatePath("/");
+    revalidatePath("/matches");
+    for (const r of result.results) revalidatePath(`/players/${r.playerId}`);
   }
 
   return NextResponse.json(result, { status: 200 });

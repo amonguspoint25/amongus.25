@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// Match records are immutable after ingest (only voiding mutates), so a long CDN TTL is safe and
+// neutralizes per-match-id flood fan-out.
+export const revalidate = 300;
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

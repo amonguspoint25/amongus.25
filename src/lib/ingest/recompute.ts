@@ -12,6 +12,10 @@ const BASELINE = {
 // match's effect is to replay everything without it. Cheap for a small league; voids are rare.
 // MUST run inside a transaction (caller owns it, e.g. the void action) so a failure rolls back.
 export async function recomputeAll(tx: Prisma.TransactionClient): Promise<void> {
+  // Serialize recomputes (admin double-click / two admins) so two full O(matches×participants) ELO
+  // replays can't run concurrently and contend on Neon. Transaction-scoped — auto-released at end.
+  await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(727274)");
+
   // Reset every player to the baseline, then drop season rows — they're recreated during replay
   // with the correct soft-reset seeds (getOrCreatePlayerSeason seeds from the prior season).
   await tx.player.updateMany({ data: BASELINE });
