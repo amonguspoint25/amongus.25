@@ -1,7 +1,9 @@
-// Players start at 1000, so Bronze (min 0) is the true entry tier and the ladder
-// climbs from there. Each threshold is a meaningful gap above the 1000 start.
+// Players start at 1000 (Bronze). The ladder climbs from there; Iron and Wood sit BELOW
+// the start for players who keep losing and drop under the 1000 baseline.
 export const TIERS = [
-  { name: "Bronze", min: 0, image: "/media/tier-bronze.png", glow: "#cd7f32" },
+  { name: "Wood", min: 0, image: "/media/tier-wood.png", glow: "#c8924a" },
+  { name: "Iron", min: 850, image: "/media/tier-iron.png", glow: "#b4c0cf" },
+  { name: "Bronze", min: 950, image: "/media/tier-bronze.png", glow: "#cd7f32" },
   { name: "Silver", min: 1050, image: "/media/tier-silver.png", glow: "#c8d0dc" },
   { name: "Gold", min: 1150, image: "/media/tier-gold.png", glow: "#ffcf52" },
   { name: "Platinum", min: 1280, image: "/media/tier-platinum.png", glow: "#bfe3ff" },
