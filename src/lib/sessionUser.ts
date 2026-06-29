@@ -11,6 +11,6 @@ export const getSessionUser = cache(async () => {
   if (!discordId) return null;
   return prisma.user.findUnique({
     where: { discordId },
-    select: { id: true, username: true, isAdmin: true, isHost: true },
+    select: { id: true, username: true, isAdmin: true, isHost: true, player: { select: { id: true } } },
   });
 });

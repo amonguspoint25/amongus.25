@@ -17,6 +17,7 @@ export async function Nav() {
   // getSessionUser is request-cached, so this shares the lookup with requireAdmin().
   const me = await getSessionUser();
   const roleTabs = [
+    ...(me?.player ? [{ href: `/players/${me.player.id}`, label: "My Rank" }] : []),
     ...(me?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
     ...(me?.isAdmin || me?.isHost ? [{ href: "/host", label: "Host" }] : []),
   ];

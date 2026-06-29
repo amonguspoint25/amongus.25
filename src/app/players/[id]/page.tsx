@@ -6,6 +6,10 @@ import { CountUp } from "@/components/CountUp";
 import { Sparkline } from "@/components/Sparkline";
 import { TiltCard } from "@/components/TiltCard";
 
+// Render per-request like every sibling DB page so a freshly-ingested match shows the player's
+// updated ELO / recent matches / sparkline immediately (without this, Next caches the route).
+export const dynamic = "force-dynamic";
+
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
