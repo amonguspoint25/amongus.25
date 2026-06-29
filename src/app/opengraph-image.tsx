@@ -4,7 +4,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Among Us .25 Ranked";
 
-// The link-preview card shown when au-25.vercel.app is shared in Discord.
+// The link-preview card shown when amongus25.com is shared in Discord.
 export default function OpengraphImage() {
   return new ImageResponse(
     (

@@ -30,7 +30,7 @@ const mono = JetBrains_Mono({
 const DESCRIPTION = "Climb the Crew & Impostor ELO ladders on the .25 ranked server.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://au-25.vercel.app"),
+  metadataBase: new URL("https://amongus25.com"),
   title: "Among Us .25 Ranked",
   description: DESCRIPTION,
   // OG/Twitter images come from app/opengraph-image.tsx automatically.

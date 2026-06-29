@@ -20,7 +20,7 @@ try {
 
     $lines    = Get-Content -LiteralPath $cfg
     $baseLine = $lines | Where-Object { $_ -match '^\s*WebsiteBaseUrl\s*=' } | Select-Object -First 1
-    $baseUrl  = if ($baseLine) { ($baseLine -replace '^\s*WebsiteBaseUrl\s*=\s*', '').Trim().TrimEnd('/') } else { 'https://au-25.vercel.app' }
+    $baseUrl  = if ($baseLine) { ($baseLine -replace '^\s*WebsiteBaseUrl\s*=\s*', '').Trim().TrimEnd('/') } else { 'https://amongus25.com' }
 
     Write-Host ''
     Write-Host "Ranked site: $baseUrl" -ForegroundColor Cyan

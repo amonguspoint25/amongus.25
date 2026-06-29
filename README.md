@@ -136,7 +136,7 @@ one response for all three, no existence oracle. Codes are single-use and expire
 2. Push this repo to **GitHub**.
 3. **vercel.com** → New Project → import the repo.
 4. Add all env vars (the table above) in Vercel **Project Settings → Environment Variables**.
-   Set `AUTH_URL` to your production URL (e.g. `https://among-us-25-ranked.vercel.app`).
+   Set `AUTH_URL` to your production URL (e.g. `https://amongus25.com`).
 5. Add the production Discord redirect (see above).
 6. Deploy. Then smoke-test: sign in with Discord, and `POST` a test match to
    `https://<domain>/api/ingest/match` with the bearer token — it should appear on the leaderboard.
