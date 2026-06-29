@@ -62,7 +62,7 @@ export default async function HostPage() {
             textDecoration: "none",
           }}
         >
-          ↓ Download mod (.zip · 2.7 MB)
+          ↓ Download mod (.zip · 32 MB)
         </a>
         <ol
           style={{
