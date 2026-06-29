@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { tierFor } from "@/lib/rank";
+import { tierFor, isApexTier } from "@/lib/rank";
 
 type Row = {
   id: string; name: string;
@@ -131,7 +131,7 @@ export function LeaderboardTable() {
         <tbody>
           {filteredRanked.map((r, i) => {
             const tier = tierFor(r.overallElo);
-            const isTopImpostor = tier.name === "Top Impostor";
+            const isElite = isApexTier(tier.name);
             return (
               <tr
                 key={r.id}
@@ -157,7 +157,7 @@ export function LeaderboardTable() {
                 <td className="data p-3">
                   <span className="inline-flex items-center gap-2">
                     <img src={tier.image} alt="" width={22} height={22} />
-                    <span style={{ color: isTopImpostor ? "var(--alert)" : "var(--text)" }}>{tier.name}</span>
+                    <span style={{ color: isElite ? tier.glow : "var(--text)" }}>{tier.name}</span>
                   </span>
                 </td>
                 <td className="data p-3"><span className="glow-num">{r.crewElo}</span></td>

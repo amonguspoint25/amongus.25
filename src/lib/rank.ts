@@ -9,7 +9,14 @@ export const TIERS = [
   { name: "Platinum", min: 1280, image: "/media/tier-platinum.png", glow: "#bfe3ff" },
   { name: "Diamond", min: 1420, image: "/media/tier-diamond.png", glow: "#38e1ff" },
   { name: "Top Impostor", min: 1600, image: "/media/tier-top-impostor.png", glow: "#ff4d5e" },
+  { name: "Mastermind", min: 1750, image: "/media/tier-mastermind.png", glow: "#ffd24a" },
 ];
 export function tierFor(elo: number) {
   return [...TIERS].reverse().find((t) => elo >= t.min) ?? TIERS[0];
+}
+
+// The elite top tiers get their name rendered in their own glow color (a flourish) instead of
+// the default text color, so the apex of the ladder stands out.
+export function isApexTier(name: string): boolean {
+  return name === "Mastermind" || name === "Top Impostor";
 }

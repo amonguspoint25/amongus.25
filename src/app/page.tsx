@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { realPlayersWhere, rankedOverallWhere } from "@/lib/players";
-import { TIERS, tierFor } from "@/lib/rank";
+import { TIERS, tierFor, isApexTier } from "@/lib/rank";
 import { Reveal } from "@/components/Reveal";
 import { HeroParallax } from "@/components/HeroParallax";
 import { CountUp } from "@/components/CountUp";
@@ -69,7 +69,7 @@ export default async function Home() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={tierFor(p.overallElo).image} alt="" width={34} height={34} />
                   <span className="font-display font-semibold flex-1">{p.displayName}</span>
-                  <span className="eyebrow hidden sm:inline" style={{ color: tierFor(p.overallElo).name === "Top Impostor" ? "var(--alert)" : "var(--muted)" }}>
+                  <span className="eyebrow hidden sm:inline" style={{ color: isApexTier(tierFor(p.overallElo).name) ? tierFor(p.overallElo).glow : "var(--muted)" }}>
                     {tierFor(p.overallElo).name}
                   </span>
                   <span className="glow-num text-xl" style={{ color: "var(--ion)" }}>{Math.round(p.overallElo)}</span>

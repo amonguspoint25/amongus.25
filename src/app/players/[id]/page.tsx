@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { tierFor } from "@/lib/rank";
+import { tierFor, isApexTier } from "@/lib/rank";
 import { PLACEMENT_GAMES } from "@/lib/elo/placement";
 import Link from "next/link";
 import { CountUp } from "@/components/CountUp";
@@ -45,7 +45,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const winRate = p.games ? Math.round(((p.crewWins + p.impWins) / p.games) * 100) : 0;
   const tier = tierFor(p.overallElo);
   const provisional = p.games < PLACEMENT_GAMES;
-  const isTopImpostor = tier.name === "Top Impostor";
+  const isElite = isApexTier(tier.name);
   const sparkPoints = historyParticipants.map((h) => h.eloAfter);
 
   return (
@@ -65,7 +65,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
               PROVISIONAL · {p.games}/{PLACEMENT_GAMES} placements
             </span>
           ) : (
-            <span style={{ color: isTopImpostor ? "var(--alert)" : "var(--signal)" }}>{tier.name}</span>
+            <span style={{ color: isElite ? tier.glow : "var(--signal)" }}>{tier.name}</span>
           )}
           {" · "}Overall{" "}
           <span className="glow-num">
