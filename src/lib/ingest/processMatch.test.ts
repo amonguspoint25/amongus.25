@@ -126,7 +126,7 @@ describe("processMatch", () => {
     expect(i!.games).toBe(1);
   });
 
-  it("applies the placement K-factor (64) for a player's first game in a role", async () => {
+  it("applies the placement K-factor (40) for a player's first game in a role", async () => {
     const imp = await makePlayer("imp-k");
     const crew = await makePlayer("crew-k");
     const res = await processMatch({
@@ -139,7 +139,7 @@ describe("processMatch", () => {
     });
     // Both players start at 1000, so the impostor's opponentAvg is 1000.
     const perf = computePerf("IMPOSTOR", { kills: 0, correctShots: 0, incorrectShots: 0, tasksDone: 0, tasksTotal: 0, survived: true });
-    const expected = updateRating({ rating: 1000, opponentAvg: 1000, won: true, perf, k: 64 });
+    const expected = updateRating({ rating: 1000, opponentAvg: 1000, won: true, perf, k: 40 });
     const mp = await prisma.matchParticipant.findFirst({ where: { match: { code: "K-1" }, role: "IMPOSTOR" } });
     expect(mp!.eloDelta).toBeCloseTo(expected.eloDelta, 5);
     expect(res.matchId).toBeTruthy();

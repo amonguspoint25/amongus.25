@@ -1,7 +1,7 @@
 import { prisma } from "../db";
 import { computePerf } from "../elo/perf";
 import { updateRating } from "../elo/update";
-import { kForGames } from "../elo/placement";
+import { kForGames, applyPlacementCap } from "../elo/placement";
 import type { MatchPayload } from "./schema";
 import { Prisma } from "@prisma/client";
 import { getOrCreateActiveSeason, getOrCreatePlayerSeason } from "../season/season";
@@ -107,7 +107,11 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
         const perf = computePerf(p.role, p);
         const roleGames = isImp ? ps.impGames : ps.crewGames; // per-season placement
         const k = kForGames(roleGames);
-        const { eloAfter, eloDelta } = updateRating({ rating, opponentAvg, won: p.won, perf, k });
+        const raw = updateRating({ rating, opponentAvg, won: p.won, perf, k });
+        // Placement Gold cap: while provisional, hold the rating at most Gold (recompute the
+        // delta so eloBefore + eloDelta == eloAfter stays consistent).
+        const eloAfter = applyPlacementCap(raw.eloAfter, roleGames);
+        const eloDelta = eloAfter - rating;
 
         await tx.matchParticipant.create({
           data: {
@@ -153,9 +157,10 @@ export async function processMatch(payload: MatchPayload): Promise<{ matchId: st
           },
         });
 
-        // Player lifetime counters + cumulative career Elo (the all-time board).
-        const careerCrew = isImp ? player.crewElo : player.crewElo + eloDelta;
-        const careerImp = isImp ? player.impElo + eloDelta : player.impElo;
+        // Player lifetime counters + cumulative career Elo (the all-time board). Apply the same
+        // placement cap so a provisional player's all-time rank is also held at most Gold.
+        const careerCrew = isImp ? player.crewElo : applyPlacementCap(player.crewElo + eloDelta, roleGames);
+        const careerImp = isImp ? applyPlacementCap(player.impElo + eloDelta, roleGames) : player.impElo;
         await tx.player.update({
           where: { id: player.id },
           data: {
