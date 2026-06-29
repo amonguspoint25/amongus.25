@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ public sealed class BrainHost
 {
     private readonly RankedGate _gate;
     private readonly LinkManager _link;
+    private readonly Sender _sender;
     private readonly MatchSession _session;
     private readonly CancellationTokenSource _cts = new();
     private readonly ConcurrentQueue<GameEvent> _events = new();
@@ -50,8 +52,12 @@ public sealed class BrainHost
         var transport = new HttpClientTransport(http, cfg.WebsiteBaseUrl.Value, cfg.HostKey.Value ?? string.Empty);
         _gate = new RankedGate(transport);
         _link = new LinkManager(transport);
-        var sender = new Sender(transport, new InMemoryMatchQueue());
-        _session = new MatchSession(_gate, _link, new MatchRecorder(), new MatchBuilder(), sender);
+        // Crash-durable queue next to the BepInEx config so queued/401 matches survive a restart
+        // (anti-cheat kicks, site blips) and get retried by the poll loop's drain.
+        var queuePath = Path.Combine(BepInEx.Paths.ConfigPath, "gamewatcher-queue.json");
+        _sender = new Sender(transport, new FileMatchQueue(queuePath,
+            msg => GameWatcherPlugin.Logger?.LogWarning("[sender] " + msg)));
+        _session = new MatchSession(_gate, _link, new MatchRecorder(), new MatchBuilder(), _sender);
         _linkUrl = (cfg.WebsiteBaseUrl.Value ?? "").Replace("https://", "").Replace("http://", "").TrimEnd('/') + "/link";
     }
 
@@ -81,6 +87,21 @@ public sealed class BrainHost
         {
             try { _lastStatus = (int)await _gate.GetStatusAsync(_cts.Token).ConfigureAwait(false); _polledOnce = true; }
             catch { }
+
+            // Retry any matches parked by a transient failure or a mid-session 401. Snapshot-empty
+            // = no-op (no HTTP), so this is free when nothing is queued. Re-sends are idempotent by
+            // matchCode, so racing the event-loop send is harmless.
+            try
+            {
+                var drain = await _sender.DrainAsync(_cts.Token).ConfigureAwait(false);
+                if (drain.Sent > 0)
+                    _pendingChat.Enqueue(drain.Sent == 1
+                        ? "Queued match sent to the leaderboard"
+                        : drain.Sent + " queued matches sent to the leaderboard");
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex) { GameWatcherPlugin.Logger?.LogWarning("[sender] drain failed: " + ex.Message); }
+
             try { await Task.Delay(TimeSpan.FromSeconds(5), _cts.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) { break; }
         }

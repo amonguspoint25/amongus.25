@@ -55,7 +55,7 @@ public static class RankedSettings
                 Req(go.GetInt(Int32OptionNames.TaskBarMode) == TaskBarNever, "task bar Never");
 
                 Req(!go.GetBool(BoolOptionNames.VisualTasks), "visual off");
-                Req(!go.GetBool(BoolOptionNames.AnonymousVotes), "anon votes off");
+                Req(go.GetBool(BoolOptionNames.AnonymousVotes), "anon votes on"); // ON so GhostVoteReveal has something to un-anonymize
                 Req(!go.GetBool(BoolOptionNames.ConfirmImpostor), "confirm ejects off");
 
                 bool anyRole = false;

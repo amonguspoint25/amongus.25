@@ -111,8 +111,10 @@ public static class StartGate
         }
 
         // Cancel the start and tell the lobby why (kept under AU's ~100-char chat limit).
+        // Prominent ⚠ prefix so the host can't miss it in lobby chat; never kicks anyone.
         private static void Block(string msg)
         {
+            msg = "⚠ " + msg; // U+26A0 warning sign (TMP-safe)
             if (msg.Length > 90) msg = msg.Substring(0, 88) + "..";
             var local = PlayerControl.LocalPlayer;
             if (local != null) local.RpcSendChat(msg);
