@@ -32,4 +32,23 @@ export const COMMANDS = [
     name: "tiers",
     description: "The rank tier ladder and ELO thresholds",
   },
+  {
+    name: "setup-leaderboard",
+    description: "Post a live-updating leaderboard in this channel (refreshes after every match)",
+    // "32" = MANAGE_GUILD: Discord only shows/allows this for server managers.
+    default_member_permissions: "32",
+    options: [
+      {
+        name: "tab",
+        description: "Which ladder the live board tracks (default: overall)",
+        type: 3,
+        required: false,
+        choices: [
+          { name: "Overall", value: "overall" },
+          { name: "Crew", value: "crew" },
+          { name: "Impostor", value: "imp" },
+        ],
+      },
+    ],
+  },
 ];

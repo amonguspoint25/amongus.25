@@ -128,6 +128,16 @@ model MatchParticipant {
   eloDelta       Float
 }
 
+// The single live-updating Discord leaderboard message: which channel + message the bot edits
+// after every match. Singleton row (id = "singleton"); re-running /setup-leaderboard replaces it.
+model DiscordLeaderboard {
+  id        String   @id @default("singleton")
+  channelId String
+  messageId String
+  sort      String   @default("overall")
+  updatedAt DateTime @updatedAt
+}
+
 enum TFormat {
   SINGLE_ELIM
   DOUBLE_ELIM

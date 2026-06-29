@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { recomputeAll } from "@/lib/ingest/recompute";
+import { refreshBoard } from "@/lib/discord/board";
 
 // Void (or un-void) a match, then rebuild all ratings so the change is reflected exactly.
 // The flag flip + full recompute run in one transaction (generous timeout for the replay),
@@ -29,4 +30,5 @@ export async function toggleMatchVoidedAction(formData: FormData): Promise<void>
   revalidatePath("/admin/matches");
   revalidatePath("/matches");
   revalidatePath("/leaderboard");
+  await refreshBoard(); // keep the live Discord leaderboard in sync after a void/un-void recompute
 }

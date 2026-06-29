@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { verifyDiscordSignature } from "@/lib/discord/verify";
 import { getLeaderboard, getPlayerByDiscordId, getLastMatchFor } from "@/lib/discord/data";
+import { setupBoard } from "@/lib/discord/board";
 import { leaderboardEmbed, rankEmbed, lastMatchEmbed, tiersEmbed } from "@/lib/discord/embeds";
 import type { LeaderboardSort } from "@/lib/leaderboard";
 
@@ -13,8 +14,18 @@ type Followup = { embeds: object[] } | { content: string };
 type Opt = { name: string; value: string };
 
 // Builds the message to deliver for a DB-backed command (runs after the ack).
-async function buildResponse(name: string, options: Opt[], callerId: string | undefined): Promise<Followup> {
+async function buildResponse(name: string, options: Opt[], callerId: string | undefined, channelId: string): Promise<Followup> {
   const opt = (n: string) => options.find((o) => o.name === n)?.value;
+
+  if (name === "setup-leaderboard") {
+    const tab = (opt("tab") as LeaderboardSort) ?? "overall";
+    const ok = await setupBoard(channelId, tab);
+    return {
+      content: ok
+        ? "✅ Live leaderboard posted in this channel — it refreshes after every match. Run this again anywhere to move it."
+        : "Couldn't post here. Check that the bot can send messages in this channel and that DISCORD_BOT_TOKEN is set.",
+    };
+  }
 
   if (name === "leaderboard") {
     const tab = (opt("tab") as LeaderboardSort) ?? "overall";
@@ -85,20 +96,23 @@ export async function POST(req: NextRequest) {
 
   const name: string = body.data?.name ?? "";
   const callerId: string | undefined = body.member?.user?.id ?? body.user?.id;
+  const channelId: string = body.channel_id ?? "";
   const options: Opt[] = body.data?.options ?? [];
 
   // /tiers is pure (no I/O) — answer instantly with a normal reply.
   if (name === "tiers") return NextResponse.json({ type: 4, data: { embeds: [tiersEmbed()] } });
 
   // DB-backed commands: ACK immediately (a deferred type-5, well inside Discord's 3s window even on
-  // a cold start), then deliver the embed via a followup so query latency can't miss the deadline.
+  // a cold start), then deliver via a followup so query latency can't miss the deadline.
+  // setup-leaderboard's confirmation is ephemeral (admin-only); the rest are public.
   const token: string = body.token;
+  const ephemeral = name === "setup-leaderboard";
   after(async () => {
     try {
-      await sendFollowup(token, await buildResponse(name, options, callerId));
+      await sendFollowup(token, await buildResponse(name, options, callerId, channelId));
     } catch {
       await sendFollowup(token, { content: "Something went wrong — try again in a moment." });
     }
   });
-  return NextResponse.json({ type: 5 }); // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+  return NextResponse.json({ type: 5, data: ephemeral ? { flags: 64 } : {} });
 }

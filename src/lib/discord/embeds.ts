@@ -34,6 +34,7 @@ export function leaderboardEmbed(sort: LeaderboardSort, ranked: LeaderboardRow[]
     description: lines.length ? lines.join("\n") : "No ranked players yet — play your placement games!",
     color: top.length ? tierVisual(top[0].overallElo).color : NEUTRAL,
     footer: { text: `${provisional.length} player(s) still in placement · amongus25.com/leaderboard` },
+    timestamp: new Date().toISOString(), // Discord renders "updated …" — signals the live board is current
   };
 }
 
